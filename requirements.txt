@@ -1,1 +1,4 @@
 fastapi==0.111.0
+sqlalchemy==2.0.30
+SQLAlchemy==2.0.30
+python-multipart==0.0.9
