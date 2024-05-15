@@ -1,3 +1,4 @@
 # PhotoShare-Python-back
 
-uvicorn main:app --reload
+Щоб запустити сервер:
+**uvicorn main:app --reload**
