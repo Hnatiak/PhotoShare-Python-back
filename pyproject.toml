@@ -10,6 +10,12 @@ python = "^3.11"
 fastapi = "^0.111.0"
 sqlalchemy = "^2.0.30"
 python-multipart = "^0.0.9"
+redis = "^5.0.4"
+fastapi-limiter = "^0.1.6"
+fastapi-mail = "^1.4.1"
+passlib = "^1.7.4"
+asyncpg = "^0.29.0"
+python-jose = "^3.3.0"
 
 
 [build-system]
