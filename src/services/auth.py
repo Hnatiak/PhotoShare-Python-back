@@ -105,3 +105,5 @@ class Auth:
 
 
 auth_service = Auth()
+
+# ПОФІКСЬ ТУТ
