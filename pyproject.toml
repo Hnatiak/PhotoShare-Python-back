@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "photoshare-python-back"
+version = "0.1.0"
+description = ""
+authors = ["Hnatiak <58102343+Hnatiak@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.111.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
