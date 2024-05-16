@@ -8,3 +8,4 @@ fastapi-mail==1.4.1
 passlib==1.7.4
 asyncpg==0.29.0
 python-jose==3.3.0
+alembic==1.13.1
