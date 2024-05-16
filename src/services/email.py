@@ -36,3 +36,4 @@ async def send_email(email: EmailStr, username: str, host: str):
         await fm.send_message(message, template_name="varify_email.html")
     except ConnectionErrors as err:
         print(err)
+

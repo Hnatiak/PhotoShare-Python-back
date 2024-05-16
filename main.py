@@ -1,20 +1,41 @@
+import os
 import re
-import redis.asyncio as redis
-from fastapi import FastAPI, Depends, HTTPException, Request, status
+from ipaddress import ip_address
 from typing import Callable
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from pathlib import Path
+
+import redis.asyncio as redis
+import uvicorn
+from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi_limiter import FastAPILimiter
-from fastapi import FastAPI
-from src.routes import images, auth
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.db import get_db
+from src.routes import contacts, auth, users
 from src.conf.config import config
 
 app = FastAPI()
 
+banned_ips = [
+    ip_address("192.168.1.1"),
+    ip_address("192.168.1.2"),
+]
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 user_agent_ban_list = [r"Googlebot", r"Python-urllib"]
+
 @app.middleware("http")
 async def user_agent_ban_middleware(request: Request, call_next: Callable):
     print(request.headers.get("Authorization"))
@@ -29,9 +50,13 @@ async def user_agent_ban_middleware(request: Request, call_next: Callable):
     response = await call_next(request)
     return response
 
+BASE_DIR = Path(__file__).parent
+directory = BASE_DIR.joinpath("src").joinpath("static")
+app.mount("/static", StaticFiles(directory=directory), name="static")
+
 app.include_router(auth.router, prefix='/api')
-# app.include_router(images.router, prefix='/api')
-# app.include_router(contacts.router, prefix='/api')
+app.include_router(users.router, prefix='/api')
+app.include_router(contacts.router, prefix='/api')
 
 @app.on_event("startup")
 async def startup():
@@ -55,3 +80,6 @@ async def healthchecker(db: AsyncSession = Depends(get_db)):
         print(e)
         raise HTTPException(status_code=500, detail="Помилка підключення до дата-бази - не вдалося, зверніться до автора веб-сайту, тут не ваша помилка")
 
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=int(
+        os.environ.get("PORT", 8000)), log_level="info")

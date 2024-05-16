@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
+import redis
 from fastapi import Depends, HTTPException, status
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
@@ -17,6 +18,12 @@ class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     SECRET_KEY = config.SECRET_KEY_JWT
     ALGORITHM = config.ALGORITHM
+    cache = redis.Redis(
+        host=os.getenv("REDIS_DOMAIN"),
+        port=os.getenv("REDIS_PORT"),
+        db=0,
+        password=os.getenv("REDIS_PASSWORD"),
+    )
 
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
@@ -105,5 +112,3 @@ class Auth:
 
 
 auth_service = Auth()
-
-# ПОФІКСЬ ТУТ

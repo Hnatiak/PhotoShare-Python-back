@@ -4,7 +4,7 @@ from pydantic import ConfigDict, field_validator, EmailStr
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    DB_URL: str = "postgresql+asyncpg://postgres:567234@localhost:5432/ps_db"
+    DB_URL: str = "postgresql+asyncpg://postgres:567234@localhost:5432/contacts"
     SECRET_KEY_JWT: str = "1234567890"
     ALGORITHM: str = "HS256"
     MAIL_USERNAME: EmailStr = "postgres@meail.com"

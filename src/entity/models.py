@@ -9,19 +9,19 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):
     pass
 
-# class Image(Base):
-#     __tablename__ = 'images'
-#     id = Column(Integer, primary_key=True)
-#     first_name = Column(String(50), index=True)
-#     last_name = Column(String(50), index=True)
-#     email = Column(String(50), index=True)
-#     phone_number = Column(String(50), index=True)
-#     birthday = Column(Date, index=True)
-#     additional_data = Column(Boolean, default=False)
-#     created_at: Mapped[date] = mapped_column('created_at', DateTime, default=func.now(), nullable=True)
-#     updated_at: Mapped[date] = mapped_column('updated_at', DateTime, default=func.now(), onupdate=func.now(),                                 nullable=True)
-#     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
-#     user: Mapped["User"] = relationship("User", backref="contacts", lazy="joined")
+class Contact(Base):
+    __tablename__ = 'contacts'
+    id = Column(Integer, primary_key=True)
+    first_name = Column(String(50), index=True)
+    last_name = Column(String(50), index=True)
+    email = Column(String(50), index=True)
+    phone_number = Column(String(50), index=True)
+    birthday = Column(Date, index=True)
+    additional_data = Column(Boolean, default=False)
+    created_at: Mapped[date] = mapped_column('created_at', DateTime, default=func.now(), nullable=True)
+    updated_at: Mapped[date] = mapped_column('updated_at', DateTime, default=func.now(), onupdate=func.now(),                                 nullable=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
+    user: Mapped["User"] = relationship("User", backref="contacts", lazy="joined")
 
 class Role(enum.Enum):
     admin: str = "admin"
