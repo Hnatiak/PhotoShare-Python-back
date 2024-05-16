@@ -1,0 +1,59 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:alpine
+    container_name: ${REDIS_HOST}
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+  
+  db:
+    image: postgres:16.1
+    container_name: ${POSTGRES_HOST}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - type: bind
+        source: ./bd_data
+        target: /var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+
+  web:
+    container_name: contacts.app
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      SQLALCHEMY_DATABASE_URL: ${SQLALCHEMY_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_SERVER: ${MAIL_SERVER}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      CLOUDINARY_NAME: ${CLOUDINARY_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      RATE_LIMITER_TIMES: ${RATE_LIMITER_TIMES}
+      RATE_LIMITER_SECONDS: ${RATE_LIMITER_SECONDS}
+    command: bash -c "alembic upgrade head && python3 main.py"
+    volumes:
+      - ./app:/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - redis
