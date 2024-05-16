@@ -65,7 +65,7 @@ async def startup():
 
 @app.get('/')
 def index():
-    return {"message": "Contact Application"}
+    return {"message": "PhotoShare Application"}
 
 @app.get("/api/healthchecker") # Декоратор який відповідає як побудувати документацію до проекту - перевіряє чи все добре спрацювало чи ні і який статус повернувся
 async def healthchecker(db: AsyncSession = Depends(get_db)):
