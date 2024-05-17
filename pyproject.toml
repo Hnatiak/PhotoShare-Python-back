@@ -10,7 +10,7 @@ python = "^3.10"
 fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.29.0"}
 sqlalchemy = "^2.0.30"
-psycopg2 = "^2.9.9"
+psycopg2-binary = "^2.9.9"
 alembic = "^1.13.1"
 pydantic-extra-types = "^2.7.0"
 phonenumbers = "^8.13.36"
