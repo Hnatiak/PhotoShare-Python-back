@@ -43,7 +43,7 @@ class Comment(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
     user: Mapped["User"] = relationship("User", backref="comments", lazy="joined")
-    photo: Mapped["Photo"] = relationship("Photo", backref="comments", lazy="joined")
+    # photo: Mapped["Photo"] = relationship("Photo", backref="comments", lazy="joined")
 
 class Photo(Base):
     __tablename__ = "photos"
