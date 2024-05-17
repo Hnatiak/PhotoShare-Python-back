@@ -5,9 +5,11 @@ from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredent
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.schemas import UserModel, UserResponse, TokenModel, RequestEmail
 from src.repository import users as repository_users
 from src.services.auth import auth_service
+
+from src.schemas.schemas import UserResponse, UserModel, TokenModel
+from src.schemas.user import RequestEmail
 
 router = APIRouter(prefix='/auth', tags=["auth"])
 security = HTTPBearer()

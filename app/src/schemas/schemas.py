@@ -1,7 +1,8 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, Field, EmailStr, PastDate
-from pydantic_extra_types.phone_numbers import PhoneNumber
+# from pydantic_extra_types.phone_numbers import PhoneNumber
+from src.entity.models import Role
     
 
 class UserModel(BaseModel):
@@ -16,6 +17,7 @@ class UserDb(BaseModel):
     email: str
     created_at: datetime
     avatar: str
+    role: Role
 
     class Config:
         from_attributes = True
