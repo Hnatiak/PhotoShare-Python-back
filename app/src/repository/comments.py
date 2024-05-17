@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, text
 from datetime import datetime
 
-from src.database.models import Comment, User
+from src.entity.models import Comment, User
 from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
 
 async def create_comment(user: User, body: CommentNewSchema, db: Session) -> CommentResponseSchema:
