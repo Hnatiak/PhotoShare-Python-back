@@ -17,6 +17,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     avatar: str
     role: Role
+    isLoggedIn: bool
 
     class Config:
         from_attributes = True

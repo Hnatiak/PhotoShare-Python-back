@@ -27,6 +27,11 @@ class UserResponse(BaseModel):
     user: UserDb
     detail: str = "User successfully created"
 
+class UserResponseAll(BaseModel):
+    user: UserDb
+
+    class Config:
+        from_attributes = True
 
 class TokenModel(BaseModel):
     access_token: str

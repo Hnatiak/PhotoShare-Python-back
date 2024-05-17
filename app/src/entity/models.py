@@ -27,4 +27,5 @@ class User(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     role = Column(ENUM('admin', 'moderator', 'user', name='role'), default='user', nullable=True)
+    isLoggedIn = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)

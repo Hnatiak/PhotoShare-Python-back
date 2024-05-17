@@ -17,3 +17,8 @@ class User(Base):
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
+
+class BlacklistToken(Base):
+    __tablename__ = "blacklist_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String(255), nullable=False, unique=True)

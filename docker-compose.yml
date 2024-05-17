@@ -1,24 +1,132 @@
-#version: '3'
+version: '3'
+
+services:
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: your_postgres_password
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  app:
+    container_name: contacts.app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      SQLALCHEMY_DATABASE_URL: ${SQLALCHEMY_DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_SERVER: ${MAIL_SERVER}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      CLOUDINARY_NAME: ${CLOUDINARY_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      RATE_LIMITER_TIMES: ${RATE_LIMITER_TIMES}
+      RATE_LIMITER_SECONDS: ${RATE_LIMITER_SECONDS}
+    command: bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      - ./app:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+
+
+
+
+
+
+#version: '3.8'
 #
 #services:
-#  postgres:
-#    image: postgres
-#    restart: always
-#    environment:
-#      POSTGRES_PASSWORD: your_postgres_password
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - pgdata:/var/lib/postgresql/data
-#
 #  redis:
-#    image: redis
-#    restart: always
+#    image: redis:alpine
+#    container_name: redis
 #    ports:
 #      - "6379:6379"
 #
-#volumes:
-#  pgdata:
+#  postgres:
+#    image: postgres:16.1
+#    container_name: postgres
+#    environment:
+#      POSTGRES_DB: your_database_name
+#      POSTGRES_USER: your_username
+#      POSTGRES_PASSWORD: your_password
+#    volumes:
+#      - ./bd_data:/var/lib/postgresql/data
+#    ports:
+#      - "5432:5432"
+#
+#  app:
+#    container_name: contacts.app
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    environment:
+#      POSTGRES_DB: ${POSTGRES_DB}
+#      POSTGRES_USER: ${POSTGRES_USER}
+#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#      POSTGRES_PORT: ${POSTGRES_PORT}
+#      POSTGRES_HOST: ${POSTGRES_HOST}
+#      SQLALCHEMY_DATABASE_URL: ${SQLALCHEMY_DATABASE_URL}
+#      SECRET_KEY: ${SECRET_KEY}
+#      ALGORITHM: ${ALGORITHM}
+#      MAIL_USERNAME: ${MAIL_USERNAME}
+#      MAIL_PASSWORD: ${MAIL_PASSWORD}
+#      MAIL_FROM: ${MAIL_FROM}
+#      MAIL_PORT: ${MAIL_PORT}
+#      MAIL_SERVER: ${MAIL_SERVER}
+#      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+#      REDIS_HOST: ${REDIS_HOST}
+#      REDIS_PORT: ${REDIS_PORT}
+#      CORS_ORIGINS: ${CORS_ORIGINS}
+#      CLOUDINARY_NAME: ${CLOUDINARY_NAME}
+#      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+#      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+#      RATE_LIMITER_TIMES: ${RATE_LIMITER_TIMES}
+#      RATE_LIMITER_SECONDS: ${RATE_LIMITER_SECONDS}
+#    command: bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+#    volumes:
+#      - ./app:/app
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - postgres
+#      - redis
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
