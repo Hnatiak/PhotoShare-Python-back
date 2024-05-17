@@ -5,13 +5,15 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+# from datetime import datetime, timedelta, UTC
+
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone #UTC
 from sqlalchemy.orm import Session
 
 from src.conf.config import settings
 from src.database.db import get_db
 from src.repository import users as repository_users
-
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

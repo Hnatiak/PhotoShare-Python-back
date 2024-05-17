@@ -3,6 +3,7 @@ from src.services.email import send_email
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.repository import users as repository_users
@@ -10,6 +11,9 @@ from src.services.auth import auth_service
 
 from src.schemas.schemas import UserResponse, UserModel, TokenModel
 from src.schemas.user import RequestEmail
+from src.repository.users import add_to_blacklist
+
+from src.entity.models import User
 
 router = APIRouter(prefix='/auth', tags=["auth"])
 security = HTTPBearer()
@@ -67,6 +71,8 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     access_token = await auth_service.create_access_token(data={"sub": user.email})
     refresh_token = await auth_service.create_refresh_token(data={"sub": user.email})
     await repository_users.update_token(user, refresh_token, db)
+    db.add(user)
+    db.commit()
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
@@ -83,3 +89,19 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     refresh_token = await auth_service.create_refresh_token(data={"sub": email})
     await repository_users.update_token(user, refresh_token, db)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
+                 db: AsyncSession = Depends(get_db), user: User = Depends(auth_service.get_current_user)):
+    token = credentials.credentials
+
+    await repository_users.add_to_blacklist(token)
+
+    user.refresh_token = None
+    db.commit()
+
+    return {"message": "Successfully logged out"}
+
+
+
