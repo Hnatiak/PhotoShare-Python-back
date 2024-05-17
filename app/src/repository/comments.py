@@ -4,7 +4,7 @@ from sqlalchemy import select, text
 from datetime import datetime
 
 from src.database.models import Comment, User
-from src.schemas import CommentNewSchema, CommentResponseSchema
+from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
 
 async def create_comment(user: User, body: CommentNewSchema, db: Session) -> CommentResponseSchema:
     comment = Comment(**body.model_dump())
