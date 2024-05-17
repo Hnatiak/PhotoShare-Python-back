@@ -1,4 +1,4 @@
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -22,3 +22,18 @@ class BlacklistToken(Base):
     __tablename__ = "blacklist_tokens"
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String(255), nullable=False, unique=True)
+    
+class Comment(Base):
+    __tablename__ = "comments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
+    text: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+    updated_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
+    user: Mapped["User"] = relationship("User", backref="comments", lazy="joined")
+    photo: Mapped["Photo"] = relationship("Photo", backref="comments", lazy="joined")
+
+class Photo(Base):
+    __tablename__ = "photos"
+    id: Mapped[int] = mapped_column(primary_key=True)

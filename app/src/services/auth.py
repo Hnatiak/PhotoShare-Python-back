@@ -5,9 +5,10 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from datetime import datetime, timedelta, UTC
+# from datetime import datetime, timedelta, UTC
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta, timezone #UTC
 from sqlalchemy.orm import Session
 
 from src.conf.config import settings
@@ -31,10 +32,10 @@ class Auth:
     async def create_access_token(self, data: dict, expires_delta: Optional[float] = None):
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.now(UTC) + timedelta(seconds=expires_delta)
+            expire = datetime.now(timezone.utc) + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.now(UTC) + timedelta(minutes=15)
-        to_encode.update({"iat": datetime.now(UTC), "exp": expire, "scope": "access_token"})
+            expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        to_encode.update({"iat": datetime.now(timezone.utc), "exp": expire, "scope": "access_token"})
         encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_access_token
 
@@ -42,10 +43,10 @@ class Auth:
     async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.now(UTC) + timedelta(seconds=expires_delta)
+            expire = datetime.now(timezone.utc) + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.now(UTC) + timedelta(days=7)
-        to_encode.update({"iat": datetime.now(UTC), "exp": expire, "scope": "refresh_token"})
+            expire = datetime.now(timezone.utc) + timedelta(days=7)
+        to_encode.update({"iat": datetime.now(timezone.utc), "exp": expire, "scope": "refresh_token"})
         encoded_refresh_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_refresh_token
 
@@ -85,8 +86,8 @@ class Auth:
     
     def create_email_token(self, data: dict):
         to_encode = data.copy()
-        expire = datetime.now(UTC) + timedelta(days=7)
-        to_encode.update({"iat": datetime.now(UTC), "exp": expire})
+        expire = datetime.now(timezone.utc) + timedelta(days=7)
+        to_encode.update({"iat": datetime.now(timezone.utc), "exp": expire})
         token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return token
 
