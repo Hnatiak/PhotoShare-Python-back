@@ -35,3 +35,15 @@ class TokenModel(BaseModel):
 class RequestEmail(BaseModel):
     email: EmailStr
 
+class CommentResponseSchema(BaseModel):
+    id: int
+    user_id: int
+    photo_id: int
+    text: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CommentNewSchema(BaseModel):
+    photo_id: int
+    text: str
