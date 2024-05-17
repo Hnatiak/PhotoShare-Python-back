@@ -4,6 +4,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Date, Boolean, func
 import enum
+from sqlalchemy.dialects.postgresql import ENUM
 
 Base = declarative_base()
 
@@ -22,6 +23,9 @@ class User(Base):
     created_at = Column("created_at", DateTime, default=func.now())
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    role = Column(ENUM('admin', 'moderator', 'user', name='role'), default='user', nullable=True)
+    isLoggedIn = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)
     
 
@@ -44,3 +48,10 @@ class Comment(Base):
 class Photo(Base):
     __tablename__ = "photos"
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    url: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+    updated_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
+    user: Mapped["User"] = relationship("User", backref="photos", lazy="joined")
+    comments: Mapped[list["Comment"]] = relationship("Comment", backref="photos", lazy="joined")
