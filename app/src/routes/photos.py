@@ -15,6 +15,7 @@ from src.services.photo import CloudPhotoService
 from fastapi import APIRouter, Form, HTTPException, Depends, status, UploadFile, File
 from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType
 from src.conf.config import settings
+from src.repository.exceptions import AccessDeniedException
 
 
 router = APIRouter(prefix="/photos", tags=["photos"])
@@ -22,35 +23,11 @@ rl_times = settings.rate_limiter_times
 rl_seconds = settings.rate_limiter_seconds
 
 
-def checker(data: str = Form(...)) -> PhotoBase:
-    try:
-        return PhotoBase.model_validate_json(data)
-    except ValidationError as e:
-        raise HTTPException(
-            detail=jsonable_encoder(e.errors()),
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-
-
 ##############################
-async def is_admin_or_photo_owner(
-    photo_id: uuid.UUID,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: Session = Depends(get_db),
-):
-    photo = await repository_photos.get_photo(photo_id, db)
-    if photo is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
-        )
-    if current_user.role == Role.admin or photo.user_id == current_user.id:
-        return True
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission for CRUD on this photo",
-        )
-
+async def is_operaation_restricted_to_user(
+    current_user: User = Depends(auth_service.get_current_user)
+) -> bool:    
+    return current_user.role != Role.admin
 
 ##############################
 
@@ -59,14 +36,14 @@ async def is_admin_or_photo_owner(
     "/",
     response_model=List[PhotoResponse],
     description="No more than 10 requests per minute",
-    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))],
+    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))]
 )
 async def read_photos(
     filter: str = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user),
+    current_user: User = Depends(auth_service.get_current_user)
 ):
     photos = await repository_photos.get_photos(filter, skip, limit, current_user, db)
     return photos
@@ -77,17 +54,15 @@ async def read_photos(
     response_model=PhotoResponse,
     description="No more than 10 requests per minute",
     dependencies=[
-        Depends(RateLimiter(times=rl_times, seconds=rl_seconds)),
-        Depends(is_admin_or_photo_owner),  ############# ADD depends
-    ],
+        Depends(RateLimiter(times=rl_times, seconds=rl_seconds))
+    ]
 )
 async def read_photo(
     photo_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user),
+    current_user: User = Depends(auth_service.get_current_user)
 ):
-    # photo = await repository_photos.get_photo(photo_id, current_user, db)
-    photo = await repository_photos.get_photo(photo_id, db)
+    photo = await repository_photos.get_photo(photo_id, current_user, db)    
     if photo is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
@@ -98,16 +73,15 @@ async def read_photo(
 @router.get(
     "/link/{photo_id}",
     description="No more than 10 requests per minute",
-    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))],
+    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))]
 )
 async def read_photo(
     photo_id: uuid.UUID,
     link_type: LinkType,
     db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user),
+    current_user: User = Depends(auth_service.get_current_user)
 ):
-    # photo = await repository_photos.get_photo(photo_id, current_user, db)
-    photo = await repository_photos.get_photo(photo_id, db)
+    photo = await repository_photos.get_photo(photo_id, current_user, db)
     if photo is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
@@ -127,14 +101,14 @@ async def read_photo(
     response_model=PhotoResponse,
     status_code=status.HTTP_201_CREATED,
     description="No more than 10 requests per minute",
-    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))],
+    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))]
 )
 async def create_photo(
     file: UploadFile = File(),
     photo_description: str = Form(None),
     tags: list[str] = Form([]),
     db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user),
+    current_user: User = Depends(auth_service.get_current_user)
 ):
     photo = None
     try:
@@ -160,13 +134,13 @@ async def create_photo(
     response_model=PhotoResponse,
     status_code=status.HTTP_201_CREATED,
     description="No more than 10 requests per minute",
-    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))],
+    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))]
 )
 async def transform_photo(
     photo_id: uuid.UUID,
     transformation: AssetType,
     db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user),
+    current_user: User = Depends(auth_service.get_current_user)
 ):
     photo = None
     try:
@@ -209,20 +183,27 @@ async def transform_photo(
     response_model=PhotoResponse,
     description="No more than 10 requests per minute",
     dependencies=[
-        Depends(RateLimiter(times=rl_times, seconds=rl_seconds)),
-        Depends(is_admin_or_photo_owner),  ############# ADD depends
-    ],
+        Depends(RateLimiter(times=rl_times, seconds=rl_seconds))
+    ]
 )
 async def remove_photo(
     photo_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user),
-):
-    # photo = await repository_photos.remove_photo(photo_id, current_user, db)
-    photo = await repository_photos.remove_photo(photo_id, db)
+    is_restricted_to_user: bool = Depends(is_operaation_restricted_to_user)
+):  
+    photo = None
+    try:
+        photo = await repository_photos.remove_photo(photo_id, current_user, db, is_restricted_to_user)
+    except AccessDeniedException:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="You do not have permission for CRUD on this photo"
+        )
     if photo is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Photo not found"
         )
     return photo
 
@@ -231,7 +212,7 @@ async def remove_photo(
     "/{photo_id}",
     response_model=PhotoResponse,
     description="No more than 10 requests per minute",
-    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))],
+    dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))]
 )
 async def update_photo_details(
     photo_id: uuid.UUID,
@@ -239,12 +220,18 @@ async def update_photo_details(
     tags: list[str] = Form([]),
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user),
+    is_restricted_to_user: bool = Depends(is_operaation_restricted_to_user)
 ):
     photo = None
     try:
         body = PhotoBase(description=photo_description, tags=tags[0].split(","))
         photo = await repository_photos.update_photo_details(
-            photo_id, body, current_user, db
+            photo_id, body, current_user, db, is_restricted_to_user
+        )
+    except AccessDeniedException:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="You do not have permission for CRUD on this photo"
         )
     except ValidationError as err:
         raise HTTPException(
