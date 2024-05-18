@@ -123,21 +123,6 @@ async def delete_comment(record_id: int, db: Session) -> None:
     stmt = select(Comment).filter_by(id=record_id)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    return result.scalars().all()
-
-async def delete_comment(record_id: int, db: Session) -> None:
-    '''
-    Deletes comment by ID.
-
-    Args:    
-        record_id: ID of record to delete
-        db: sync db session
-    Returns:
-        None
-    '''
-    stmt = select(Comment).filter_by(id=record_id)
-    # result = await db.execute(stmt)
-    result = db.execute(stmt)
     result = result.scalar_one_or_none()
     if result:
         # await db.delete(result)
