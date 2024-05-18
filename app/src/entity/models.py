@@ -24,7 +24,9 @@ class User(Base):
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
-    role = Column(ENUM('admin', 'moderator', 'user', name='role'), default='user', nullable=True)
+    # role = Column(ENUM('admin', 'moderator', 'user', name='role'), default='user', nullable=True)
+    role = Column(ENUM(Role),
+                  default=Role.user, nullable=True)
     isLoggedIn = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)
     

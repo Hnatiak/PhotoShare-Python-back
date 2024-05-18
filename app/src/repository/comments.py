@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, text, func
 # from datetime import datetime
 
-from src.entity.models import Comment, User
+from src.entity.models import Comment, User, Photo
 from src.schemas.schemas import CommentNewSchema
 
 async def create_comment(user: User, body: CommentNewSchema, db: Session) -> Comment|None:
@@ -129,4 +129,24 @@ async def delete_comment(record_id: int, db: Session) -> None:
         db.delete(result)
         db.commit()
         
+    return result
+
+
+async def get_author_by_comment_id(rec_id: int, db: Session) -> User|None:
+    '''
+    Retrieves comment author by record ID.
+    
+    Args:
+        rec_id: The ID of comment record.
+        db: sync db session
+    Returns:
+        obj: 'User': Author of comments.
+    '''
+    stmt = select(Comment).filter_by(id=rec_id)
+    # result = await db.execute(stmt)
+    result = db.execute(stmt)
+    result = result.scalar_one_or_none()
+    if result:
+        result = result.user
+    
     return result
