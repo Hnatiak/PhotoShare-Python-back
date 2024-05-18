@@ -6,6 +6,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import UUID, Column, Integer, String, Date, Boolean, func
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy import Enum
 
 Base = declarative_base()
 
@@ -33,15 +34,16 @@ class User(Base):
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
-    role = Column(ENUM('admin', 'moderator', 'user', name='role'), default='user', nullable=True)
+    role = Column('role', Enum(Role), default=Role.user)
     isLoggedIn = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)
-    
+
 
 class BlacklistToken(Base):
-    __tablename__ = "blacklist_tokens"
-    id = Column(Integer, primary_key=True, index=True)
-    token = Column(String(255), nullable=False, unique=True)
+    __tablename__ = 'blacklist_tokens'
+    id = Column(Integer, primary_key=True)
+    token = Column(String(500), unique=True, nullable=False)
+    blacklisted_on = Column(DateTime, default=func.now())
     
 class Comment(Base):
     __tablename__ = "comments"

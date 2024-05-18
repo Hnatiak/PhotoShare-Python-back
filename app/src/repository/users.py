@@ -1,11 +1,9 @@
 from libgravatar import Gravatar
 from sqlalchemy.orm import Session
 from typing import List
-
+from datetime import datetime
 from src.entity.models import User
-# from src.schemas.schemas import UserModel
 from src.schemas.schemas import UserModel
-# import aioredis
 import redis.asyncio as redis
 from sqlalchemy.future import select
 
@@ -13,8 +11,8 @@ from src.schemas.user import UserResponse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import UploadFile
-
 from src.conf.config import settings
+from src.entity.models import BlacklistToken
 
 async def get_user_by_email(email: str, db: Session) -> User:
     return db.query(User).filter(User.email == email).first()
@@ -54,37 +52,27 @@ async def edit_my_profile(avatar: UploadFile, new_username: str, user: User, db:
     if new_username:
         user.username = new_username
     if avatar:
-        avatar_path = save_avatar(avatar)
+        avatar_path = update_avatar(user.email, url=await avatar.read(), db=db)
         user.avatar_url = avatar_path
     db.add(user)
     await db.commit()
     await db.refresh(user)
     return user
 
-def save_avatar(avatar: UploadFile) -> str:
-    pass
-
 BLACKLISTED_TOKENS = "blacklisted_tokens"
 
 r = redis.Redis(host=settings.redis_host, port=settings.redis_port, db=0, encoding="utf-8", decode_responses=True)
 
-# async def add_to_blacklist(token: str, expire: int = None, db: AsyncSession = None) -> None:
-#     await r.sadd(BLACKLISTED_TOKENS, token)
-#     if expire:
-#         await r.expire(token, expire)
-
-async def add_to_blacklist(token: str) -> None:
-    # Ensure token is a string
-    if not isinstance(token, str):
-        raise ValueError("Token should be a string")
-    await r.set(token, "blacklisted")
+async def add_to_blacklist(token: str, db: Session) -> None:
+    blacklist_token = BlacklistToken(token=token, blacklisted_on=datetime.now())
+    db.add(blacklist_token)
+    db.commit()
+    db.refresh(blacklist_token)
 
 
 async def is_token_blacklisted(token: str) -> bool:
     return await r.sismember(BLACKLISTED_TOKENS, token)
 
 
-async def get_all_users(db: AsyncSession) -> List[UserResponse]:
-    result = await db.execute(select(User))
-    users = result.scalars().all()
-    return [UserResponse.from_orm(user) for user in users]
+async def get_users(skip: int, limit: int, db: Session) -> List[User]:
+    return db.query(User).offset(skip).limit(limit).all()

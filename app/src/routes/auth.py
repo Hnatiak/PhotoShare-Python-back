@@ -31,7 +31,7 @@ async def signup(body: UserModel, background_tasks: BackgroundTasks, request: Re
     token_verification = auth_service.create_email_token(
         {"sub": new_user.email})
     print(f"{request.base_url}api/auth/confirmed_email/{token_verification}")
-    
+
     return {"user": new_user, "detail": "User successfully created. Check your email for confirmation."}
 
 
@@ -90,26 +90,10 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     await repository_users.update_token(user, refresh_token, db)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
-
-
-
-# @router.post("/logout")
-# async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
-#                  db: AsyncSession = Depends(get_db), user: User = Depends(auth_service.get_current_user)):
-#     token = credentials.credentials
-#     await repository_users.add_to_blacklist(token)
-#     user.refresh_token = None
-#     await db.commit()
-#     return {"message": "Successfully logged out"}
-
-
 @router.post("/logout")
-async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: AsyncSession = Depends(get_db), user: User = Depends(auth_service.get_current_user)):
+async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
+                 db: Session = Depends(get_db), user: User = Depends(auth_service.get_current_user)):
     token = credentials.credentials
-    await repository_users.add_to_blacklist(token)
-    user.refresh_token = None
-    db.commit()
+
+    await repository_users.add_to_blacklist(token, db)
     return {"message": "Successfully logged out"}
-
-
-
