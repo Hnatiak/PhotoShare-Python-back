@@ -137,7 +137,6 @@ async def get_comments_by_user_and_photo_id(user_id: int = Path(description="ID 
     result = await rep_comments.get_comments_by_user_and_photo_ids(user_id=user_id, photo_id=photo_id, offset=offset, limit=limit, db=db)
     return result
 
-
 @router.delete("/record/{rec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
 async def delete_comment(rec_id: int = Path(description="ID of record to delete"),
                          db: Session = Depends(get_db),
