@@ -7,16 +7,18 @@ from pydantic_core import PydanticCustomError
 from sqlalchemy.orm import Session
 from fastapi_limiter.depends import RateLimiter
 from src.database.db import get_db
-from src.database.models import User
+from src.entity.models import User
 from src.repository import photos as repository_photos
 from src.services.auth import auth_service
 from fastapi import APIRouter, Form, HTTPException, Depends, status, UploadFile, File
-from src.schemas import PhotoBase, PhotoResponse
+from src.schemas.schemas import PhotoBase, PhotoResponse
 from src.conf.config import settings
+
 
 router = APIRouter(prefix='/photos', tags=["photos"])
 rl_times = settings.rate_limiter_times
 rl_seconds = settings.rate_limiter_seconds
+
 
 def checker(data: str = Form(...)) -> PhotoBase:
     try:
@@ -26,6 +28,7 @@ def checker(data: str = Form(...)) -> PhotoBase:
             detail=jsonable_encoder(e.errors()),
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
+
 
 @router.get("/", response_model=List[PhotoResponse], description='No more than 10 requests per minute',
             dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
@@ -67,6 +70,7 @@ async def remove_photo(photo_id: uuid.UUID, db: Session = Depends(get_db),
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     return photo
+
 
 @router.put("/{photo_id}", response_model=PhotoResponse, description='No more than 10 requests per minute',
             dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])

@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm.relationships import _RelationshipDeclared
 from sqlalchemy.orm.properties import ColumnProperty
 from fastapi import UploadFile
-from src.database.models import Photo, Tag, User
+from src.entity.models import Photo, Tag, User
 from datetime import datetime, timedelta
-from src.schemas import PhotoBase, PhotoResponse
+from src.schemas.schemas import PhotoBase, PhotoResponse
 
 
 async def get_photos(filter: str | None, skip: int, limit: int, user: User, db: Session) -> List[Photo]:
@@ -22,10 +22,12 @@ async def get_photos(filter: str | None, skip: int, limit: int, user: User, db: 
     query = query.offset(skip).limit(limit)
     return query.all()
 
+
 async def get_photo(id:uuid.UUID, user: User, db: Session) -> List[Photo]:
     query = db.query(Photo).filter(Photo.user_id == user.id)
     query = query.filter(Photo.id == id)
     return query.first()
+
 
 # tag::sometag|description::keyword
 def parse_filter(filter: str | None) -> dict:
@@ -37,6 +39,7 @@ def parse_filter(filter: str | None) -> dict:
             dct[key] = value
         return dct
     return {}
+
 
 async def ensure_tags(tags: list[str], db: Session) -> list[Tag]:
     ensured_tags = []
@@ -73,6 +76,7 @@ async def remove_photo(photo_id: uuid.UUID, user: User, db: Session) -> Photo | 
         db.delete(photo)
         db.commit()
     return photo
+
 
 async def update_photo_details(photo_id: uuid.UUID, body: PhotoBase, user: User, db: Session) -> Photo | None:
     photo = db.query(Photo).filter(Photo.user_id == user.id).filter(Photo.id == photo_id).first()   

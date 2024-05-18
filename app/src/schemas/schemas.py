@@ -28,11 +28,13 @@ class UserResponse(BaseModel):
     user: UserDb
     detail: str = "User successfully created"
 
+
 class UserResponseAll(BaseModel):
     user: UserDb
 
     class Config:
         from_attributes = True
+
 
 class TokenModel(BaseModel):
     access_token: str
@@ -42,6 +44,7 @@ class TokenModel(BaseModel):
 
 class RequestEmail(BaseModel):
     email: EmailStr
+
 
 class CommentResponseSchema(BaseModel):
     id: int
@@ -56,10 +59,10 @@ class CommentNewSchema(BaseModel):
     photo_id: int
     text: str
 
+
 class PhotoBase(BaseModel):   
-    description: Optional[str] = Field(None, max_length=2200)
-    # tags: Optional[set[str]] = conset(str, max_length=4)
-    tags: Optional[conset(str, max_length=5)]
+    description: Optional[str] = Field(None, max_length=2200)    
+    tags: Optional[conset(str, max_length=5)] # type: ignore
 
 
 class TagBase(BaseModel):
@@ -69,15 +72,18 @@ class TagBase(BaseModel):
         from_attributes = True
 
 # tags output format is controlled here
+
 def tags_serializer(tags: TagBase) -> str:
     names = [f'#{tag.name}' for tag in tags]
     return " ".join(names)    
 
+
 CustomStr = Annotated[List[TagBase], PlainSerializer(tags_serializer, return_type=str)]
 UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)]
+
+
 class PhotoResponse(PhotoBase):
     id: Annotated[UUID4, Strict(False)]
-    #id: UUIDString
     created_at: datetime
     updated_at: datetime
     url: str
