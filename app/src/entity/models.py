@@ -14,6 +14,14 @@ class Role(enum.Enum):
     moderator: str = "moderator"
     user: str = "user"
 
+class AssetType(enum.Enum):
+    origin: str = 'origin'
+    avatar: str = 'avatar'
+    greyscale: str = 'greyscale'
+    delete_bg: str = 'delete_bg'
+    oil_paint: str = 'oil_paint'
+    sepia: str = 'sepia'
+    outline: str = 'outline'
 
 class User(Base):
     __tablename__ = "users"
@@ -58,6 +66,7 @@ class Photo(Base):
     __tablename__ = "photos"
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
     # original_id: Mapped[uuid.UUID] = mapped_column(UUID, default=None)
+    asset_type = Column(ENUM(AssetType), default='origin', nullable=True)
     created_at = Column("created_at", DateTime, default=func.now(), index=True)
     updated_at = Column("updated_at", DateTime, default=func.now())
     user_id = Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), default=None)

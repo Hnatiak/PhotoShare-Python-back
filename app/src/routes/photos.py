@@ -3,15 +3,15 @@ from typing import List
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from pydantic_core import PydanticCustomError
 from sqlalchemy.orm import Session
 from fastapi_limiter.depends import RateLimiter
 from src.database.db import get_db
-from src.entity.models import User
+from src.entity.models import User, AssetType
 from src.repository import photos as repository_photos
 from src.services.auth import auth_service
+from src.services.photo import CloudPhotoService
 from fastapi import APIRouter, Form, HTTPException, Depends, status, UploadFile, File
-from src.schemas.schemas import PhotoBase, PhotoResponse
+from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType
 from src.conf.config import settings
 
 
@@ -43,22 +43,65 @@ async def read_photos(filter: str = None, skip: int = 0, limit: int = 100, db: S
 async def read_photo(photo_id: uuid.UUID, db: Session = Depends(get_db),
                         current_user: User = Depends(auth_service.get_current_user)):
     photo = await repository_photos.get_photo(photo_id, current_user, db)
+    if photo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     return photo
+
+
+@router.get("/link/{photo_id}", description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
+async def read_photo(photo_id: uuid.UUID, link_type: LinkType, db: Session = Depends(get_db),
+                        current_user: User = Depends(auth_service.get_current_user)):
+    photo = await repository_photos.get_photo(photo_id, current_user, db)
+    if photo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
+    if link_type.name == LinkType.url.name:
+        return photo.url        
+    return "qrcode"
 
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED, description='No more than 10 requests per minute',
             dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
 async def create_photo(file: UploadFile = File(), photo_description: str = Form(None), tags: list[str] = Form([]), db: Session = Depends(get_db),
                         current_user: User = Depends(auth_service.get_current_user)):
-    body: PhotoBase = None 
+    photo = None
     try:
-        body = PhotoBase(description=photo_description, tags=tags[0].split(','))
+        public_id = f"{settings.cloudinary_app_prefix}/{CloudPhotoService.get_unique_file_name(file.filename)}"
+        asset = CloudPhotoService.upload_photo(file=file, public_id=public_id)
+        url = CloudPhotoService.get_photo_url(public_id=public_id, asset=asset)
+        body = PhotoBase(url=url, description=photo_description, tags=tags[0].split(','))
+        photo = await repository_photos.create_photo(body, current_user, db)
     except ValidationError as err:
         raise HTTPException(
                 detail=jsonable_encoder(err.errors()),
                 status_code=status.HTTP_400_BAD_REQUEST,
-            )
-    photo = await repository_photos.create_photo(file, body, current_user, db)
+            )    
+    return photo
+
+@router.post("/transform/{photo_id}", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED, description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
+async def transform_photo(photo_id:uuid.UUID, transformation: AssetType, db: Session = Depends(get_db),
+                        current_user: User = Depends(auth_service.get_current_user)):
+    photo = None
+    try:
+        photo = await repository_photos.get_photo(photo_id, current_user, db)
+        if photo is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
+        transformated_url = CloudPhotoService.transformate_photo(photo.url, transformation)        
+        photo = await repository_photos.create_transformation(
+            url=transformated_url, 
+            description=photo.description, 
+            tags=photo.tags, 
+            asset_type=transformation,
+            user=current_user, 
+            db=db)
+    except HTTPException as err:
+        raise err
+    except Exception as err:
+        raise HTTPException(
+                detail=jsonable_encoder(err.args),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )    
     return photo
 
 
@@ -87,7 +130,7 @@ async def update_photo_details(photo_id: uuid.UUID, photo_description: str = For
             )
     except IndexError as err:
         raise HTTPException(
-                detail=jsonable_encoder(err.args[0]),
+                detail=jsonable_encoder(err.args),
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
     if photo is None:

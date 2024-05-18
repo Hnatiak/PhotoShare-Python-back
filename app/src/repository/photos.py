@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm.relationships import _RelationshipDeclared
 from sqlalchemy.orm.properties import ColumnProperty
 from fastapi import UploadFile
-from src.entity.models import Photo, Tag, User
+from src.entity.models import Photo, Tag, User, AssetType
 from datetime import datetime, timedelta
 from src.schemas.schemas import PhotoBase, PhotoResponse
 
@@ -23,7 +23,7 @@ async def get_photos(filter: str | None, skip: int, limit: int, user: User, db: 
     return query.all()
 
 
-async def get_photo(id:uuid.UUID, user: User, db: Session) -> List[Photo]:
+async def get_photo(id:uuid.UUID, user: User, db: Session) -> Photo:
     query = db.query(Photo).filter(Photo.user_id == user.id)
     query = query.filter(Photo.id == id)
     return query.first()
@@ -56,12 +56,26 @@ async def ensure_tags(tags: list[str], db: Session) -> list[Tag]:
     return list(set(ensured_tags))
 
 
-async def create_photo(file: UploadFile, body: PhotoBase, user: User, db: Session) -> Photo:    
+async def create_photo(body: PhotoBase, user: User, db: Session) -> Photo:    
     tags = await ensure_tags(tags=body.tags, db=db)
     photo = Photo(
             description=body.description, 
             tags=tags, 
-            url="some url",
+            url=body.url,
+            asset_type=AssetType.origin,
+            user = user
+            )
+    db.add(photo)
+    db.commit()
+    db.refresh(photo)
+    return photo
+
+async def create_transformation(url: str, description: str, tags: list[Tag], asset_type: AssetType, user: User, db: Session) -> Photo:    
+    photo = Photo(
+            description=description, 
+            tags=tags, 
+            url=url,
+            asset_type=asset_type,
             user = user
             )
     db.add(photo)

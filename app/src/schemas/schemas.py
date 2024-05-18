@@ -1,9 +1,10 @@
 import uuid
+import enum
 from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
 from pydantic import BaseModel, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
 # from pydantic_extra_types.phone_numbers import PhoneNumber
-from src.entity.models import Role
+from src.entity.models import Role, AssetType
 
 
 class UserModel(BaseModel):
@@ -61,9 +62,15 @@ class CommentNewSchema(BaseModel):
 
 
 class PhotoBase(BaseModel):   
+    url: str
     description: Optional[str] = Field(None, max_length=2200)    
     tags: Optional[conset(str, max_length=5)] # type: ignore
+    asset_type: AssetType = AssetType.origin
 
+
+class LinkType(enum.Enum):
+    url: str = "URL"
+    qr_code: str = "QR Code"
 
 class TagBase(BaseModel):
     name: str
