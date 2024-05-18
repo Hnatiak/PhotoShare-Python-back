@@ -15,6 +15,7 @@ from src.conf.config import settings
 from src.database.db import engine
 from src.routes import auth, comments, users, photos
 
+
 logger = logging.getLogger(uvicorn.logging.__name__)
 
 origins = settings.cors_origins.split('|')
@@ -50,6 +51,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix='/api')
+app.include_router(photos.router, prefix="/api")
 
 @app.get("/")
 def read_root():
