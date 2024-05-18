@@ -71,6 +71,7 @@ async def get_comments_by_user_id(user_id: int, offset: int, limit: int, db: Ses
     return result.unique().scalars().all()
 
 
+
 async def get_comments_by_photo_id(photo_id: int, offset: int, limit: int, db: Session) -> list[Comment]:
     '''
     Retrieves comments by ID of a specific photo.
@@ -108,6 +109,21 @@ async def get_comments_by_user_and_photo_ids(user_id: int, photo_id: int, offset
     # result = await db.execute(stmt)
     result = db.execute(stmt)
     return result.unique().scalars().all()
+
+async def delete_comment(record_id: int, db: Session) -> None:
+    '''
+    Deletes comment by ID.
+
+    Args:    
+        record_id: ID of record to delete
+        db: sync db session
+    Returns:
+        None
+    '''
+    stmt = select(Comment).filter_by(id=record_id)
+    # result = await db.execute(stmt)
+    result = db.execute(stmt)
+    return result.scalars().all()
 
 async def delete_comment(record_id: int, db: Session) -> None:
     '''

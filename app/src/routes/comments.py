@@ -1,17 +1,39 @@
 from fastapi import APIRouter, HTTPException, Depends, status,Path, Query, Body
 # from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, HTTPException, Depends, status,Path, Query, Body
+# from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
 from src.services.auth import auth_service
 from src.services.access import admin_access, moderator_access
+from src.services.access import admin_access, moderator_access
 from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
+from src.entity.models import User, Comment, Role
 from src.entity.models import User, Comment, Role
 from src.repository import comments as rep_comments
 
 
 router = APIRouter(prefix='/comments', tags=["comments"])
 
+
+@router.post("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', example="user comment"),
+                         photo_id: int = Path(description="ID of photo to comment"),
+                         db: Session = Depends(get_db),
+                         current_user: User = Depends(auth_service.get_current_user)) -> Comment|None:
+    '''
+    Creates new comment.
+
+    Args:    
+        comment: text of new comment
+        photo_id: ID of the photo
+        current_user: The user to retrieve ontacts for.
+        db: sync db session Default=Depends(get_db)
+    Returns:
+        obj: 'Comment' | None: Comment with ID or None.
+    '''
+    body = CommentNewSchema(photo_id=photo_id, text=comment)
 
 @router.post("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', example="user comment"),
@@ -90,8 +112,8 @@ async def get_comments_by_user_id(user_id: int,
     return result
 
 # TODO display of comments should be restricted to registered users only?
-@router.get("/photo_id={photo_id}", response_model=list[CommentResponseSchema])
-async def get_comments_by_photo_id(photo_id: uuid.UUID,
+@router.get("/{photo_id}", response_model=list[CommentResponseSchema])
+async def get_comments_by_photo_id(photo_id: int = Path(description="ID of photo to find comments"),
                                    offset: int = Query(default=0, ge=0, description="Records to skip in response"),
                                    limit: int = Query(default=10, ge=1, le=50, description="Records per response to show"),
                                    db: Session = Depends(get_db), 
