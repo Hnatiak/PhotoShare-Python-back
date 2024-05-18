@@ -50,14 +50,14 @@ class RequestEmail(BaseModel):
 class CommentResponseSchema(BaseModel):
     id: int
     user_id: int
-    photo_id: int
+    photo_id: Annotated[UUID4, Strict(False)]
     text: str
     created_at: datetime
     updated_at: datetime
 
 
 class CommentNewSchema(BaseModel):
-    photo_id: int
+    photo_id: Annotated[UUID4, Strict(False)]
     text: str
 
 

@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy import select, text
@@ -35,19 +36,19 @@ async def get_comments_by_user_id(user_id: int, offset: int, limit: int, db: Ses
     stmt = select(Comment).filter_by(user_id=user_id).offset(offset).limit(limit)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    return result.scalars().all()
+    return result.unique().scalars().all()
 
-async def get_comments_by_photo_id(photo_id: int, offset: int, limit: int, db: Session):
+async def get_comments_by_photo_id(photo_id: uuid.UUID, offset: int, limit: int, db: Session):
     stmt = select(Comment).filter_by(photo_id=photo_id).offset(offset).limit(limit)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    return result.scalars().all()
+    return result.unique().scalars().all()
 
-async def get_comments_by_user_and_photo_ids(user_id: int, photo_id: int, offset: int, limit: int, db: Session):
+async def get_comments_by_user_and_photo_ids(user_id: int, photo_id: uuid.UUID, offset: int, limit: int, db: Session):
     stmt = select(Comment).filter_by(user_id=user_id, photo_id=photo_id).offset(offset).limit(limit)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    return result.scalars().all()
+    return result.unique().scalars().all()
 
 async def delete_comment():
     pass
