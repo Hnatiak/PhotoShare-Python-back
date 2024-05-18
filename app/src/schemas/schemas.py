@@ -1,9 +1,10 @@
-from typing import Optional
+import uuid
+from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
-from pydantic import BaseModel, Field, EmailStr, PastDate
+from pydantic import BaseModel, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
 # from pydantic_extra_types.phone_numbers import PhoneNumber
 from src.entity.models import Role
-    
+
 
 class UserModel(BaseModel):
     username: str = Field(min_length=2, max_length=16)
@@ -54,3 +55,38 @@ class CommentResponseSchema(BaseModel):
 class CommentNewSchema(BaseModel):
     photo_id: int
     text: str
+
+class PhotoBase(BaseModel):   
+    description: Optional[str] = Field(None, max_length=2200)
+    # tags: Optional[set[str]] = conset(str, max_length=4)
+    tags: Optional[conset(str, max_length=5)]
+
+
+class TagBase(BaseModel):
+    name: str
+
+    class Config:
+        from_attributes = True
+
+# tags output format is controlled here
+def tags_serializer(tags: TagBase) -> str:
+    names = [f'#{tag.name}' for tag in tags]
+    return " ".join(names)    
+
+CustomStr = Annotated[List[TagBase], PlainSerializer(tags_serializer, return_type=str)]
+UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)]
+class PhotoResponse(PhotoBase):
+    id: Annotated[UUID4, Strict(False)]
+    #id: UUIDString
+    created_at: datetime
+    updated_at: datetime
+    url: str
+    # tags: list[TagBase]
+    tags: CustomStr
+
+    class Config:
+        from_attributes = True
+
+
+class PhotoTransform(BaseModel):
+    ...

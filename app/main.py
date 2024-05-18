@@ -13,7 +13,7 @@ from fastapi_limiter import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
 from src.conf.config import settings
 from src.database.db import engine
-from src.routes import auth, comments, users
+from src.routes import auth, comments, users, photos
 
 logger = logging.getLogger(uvicorn.logging.__name__)
 
@@ -50,8 +50,6 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix='/api')
-app.include_router(users.router, prefix='/api')
-app.include_router(comments.router, prefix='/api')
 
 @app.get("/")
 def read_root():
