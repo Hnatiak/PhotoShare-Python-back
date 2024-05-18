@@ -94,6 +94,7 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
 async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
                  db: Session = Depends(get_db), user: User = Depends(auth_service.get_current_user)):
     token = credentials.credentials
-
     await repository_users.add_to_blacklist(token, db)
+    user.refresh_token = None
+    db.commit()
     return {"message": "Successfully logged out"}
