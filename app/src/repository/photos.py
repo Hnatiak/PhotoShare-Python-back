@@ -23,9 +23,14 @@ async def get_photos(filter: str | None, skip: int, limit: int, user: User, db: 
     return query.all()
 
 
-async def get_photo(id:uuid.UUID, user: User, db: Session) -> Photo:
-    query = db.query(Photo).filter(Photo.user_id == user.id)
-    query = query.filter(Photo.id == id)
+# async def get_photo(id:uuid.UUID, user: User, db: Session) -> Photo:
+#     query = db.query(Photo).filter(Photo.user_id == user.id)
+#     query = query.filter(Photo.id == id)
+#     return query.first()
+
+
+async def get_photo(id: uuid.UUID, db: Session) -> Photo:
+    query = db.query(Photo).filter(Photo.id == id)
     return query.first()
 
 
@@ -84,8 +89,20 @@ async def create_transformation(url: str, description: str, tags: list[Tag], ass
     return photo
 
 
-async def remove_photo(photo_id: uuid.UUID, user: User, db: Session) -> Photo | None:
-    photo = db.query(Photo).filter(Photo.user_id == user.id).filter(Photo.id == photo_id).first()
+# async def remove_photo(photo_id: uuid.UUID, user: User, db: Session) -> Photo | None:
+#     photo = db.query(Photo).filter(Photo.user_id == user.id).filter(Photo.id == photo_id).first()
+#     if photo:
+#         db.delete(photo)
+#         db.commit()
+#     return photo
+
+
+async def remove_photo(photo_id: uuid.UUID, db: Session) -> Photo | None:
+    photo = (
+        db.query(Photo)
+        .filter(Photo.id == photo_id)
+        .first()
+    )
     if photo:
         db.delete(photo)
         db.commit()

@@ -45,7 +45,7 @@ class BlacklistToken(Base):
     id = Column(Integer, primary_key=True)
     token = Column(String(500), unique=True, nullable=False)
     blacklisted_on = Column(DateTime, default=func.now())
-    
+
 class Comment(Base):
     __tablename__ = "comments"
     id: Mapped[int] = mapped_column(primary_key=True)
