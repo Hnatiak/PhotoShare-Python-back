@@ -1,10 +1,11 @@
+import io
 import uuid
 import enum
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import UUID, Column, Integer, String, Date, Boolean, func
+from sqlalchemy import UUID, Column, Integer, LargeBinary, String, Date, Boolean, func
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy import Enum
 
@@ -84,3 +85,9 @@ class Tag(Base):
     created_at = Column("created_at", DateTime, default=func.now())
     name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     photos: Mapped[list["Photo"]] = relationship(secondary='phototags', back_populates='tags', lazy="joined")
+
+class QRCode(Base):
+    __tablename__ = "qr_codes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("photos.id"), nullable=False)
+    qr_code: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

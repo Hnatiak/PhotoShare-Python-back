@@ -89,6 +89,11 @@ CustomStr = Annotated[List[TagBase], PlainSerializer(tags_serializer, return_typ
 UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)]
 
 
+class SimpleComment(BaseModel):
+    user_id: int
+    text: str
+
+
 class PhotoResponse(PhotoBase):
     id: Annotated[UUID4, Strict(False)]
     created_at: datetime
@@ -96,6 +101,7 @@ class PhotoResponse(PhotoBase):
     url: str
     # tags: list[TagBase]
     tags: CustomStr
+    comments: list[SimpleComment]
 
     class Config:
         from_attributes = True

@@ -1,13 +1,15 @@
+import base64
+import io
 import uuid
 from typing import List
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from fastapi_limiter.depends import RateLimiter
 from src.database.db import get_db
 from src.entity.models import User, AssetType
-from src.repository import photos as repository_photos
+from src.repository import photos as repository_photos, qrcode as repository_qrcode
 from src.services.auth import auth_service
 from src.services.photo import CloudPhotoService
 from fastapi import APIRouter, Form, HTTPException, Depends, status, UploadFile, File
@@ -57,7 +59,10 @@ async def read_photo(photo_id: uuid.UUID, link_type: LinkType, db: Session = Dep
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     if link_type.name == LinkType.url.name:
         return photo.url        
-    return "qrcode"
+    qr_code = await repository_qrcode.read_qr_code(photo_id=photo.id, user=current_user, db=db)  
+    if qr_code:  
+        return StreamingResponse(qr_code, media_type="image/png")
+    return ""
 
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED, description='No more than 10 requests per minute',
@@ -71,6 +76,8 @@ async def create_photo(file: UploadFile = File(), photo_description: str = Form(
         url = CloudPhotoService.get_photo_url(public_id=public_id, asset=asset)
         body = PhotoBase(url=url, description=photo_description, tags=tags[0].split(','))
         photo = await repository_photos.create_photo(body, current_user, db)
+        # qr_code_binary = generate_qrcode(photo.url)
+        # await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
     except ValidationError as err:
         raise HTTPException(
                 detail=jsonable_encoder(err.errors()),
@@ -87,6 +94,11 @@ async def transform_photo(photo_id:uuid.UUID, transformation: AssetType, db: Ses
         photo = await repository_photos.get_photo(photo_id, current_user, db)
         if photo is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
+        if photo.asset_type != AssetType.origin:
+            raise HTTPException(
+                detail="Can't transform due to this photo has already been transformed",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )  
         transformated_url = CloudPhotoService.transformate_photo(photo.url, transformation)        
         photo = await repository_photos.create_transformation(
             url=transformated_url, 
@@ -95,6 +107,8 @@ async def transform_photo(photo_id:uuid.UUID, transformation: AssetType, db: Ses
             asset_type=transformation,
             user=current_user, 
             db=db)
+        # qr_code_binary = generate_qrcode(photo.url)
+        # await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
     except HTTPException as err:
         raise err
     except Exception as err:
