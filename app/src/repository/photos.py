@@ -8,10 +8,11 @@ from fastapi import UploadFile
 from src.entity.models import Photo, Tag, User, AssetType
 from datetime import datetime, timedelta
 from src.schemas.schemas import PhotoBase, PhotoResponse
+from src.repository.exceptions import AccessDeniedException
 
 
 async def get_photos(filter: str | None, skip: int, limit: int, user: User, db: Session) -> List[Photo]:
-    query = db.query(Photo).filter(Photo.user_id == user.id)
+    query = db.query(Photo)
     filters = parse_filter(filter)
     for attr, value in filters.items():
         if isinstance(getattr(Photo, attr).property, ColumnProperty):
@@ -23,16 +24,9 @@ async def get_photos(filter: str | None, skip: int, limit: int, user: User, db: 
     return query.all()
 
 
-# async def get_photo(id:uuid.UUID, user: User, db: Session) -> Photo:
-#     query = db.query(Photo).filter(Photo.user_id == user.id)
-#     query = query.filter(Photo.id == id)
-#     return query.first()
-
-
-async def get_photo(id: uuid.UUID, db: Session) -> Photo:
+async def get_photo(id:uuid.UUID, user: User, db: Session) -> Photo:
     query = db.query(Photo).filter(Photo.id == id)
     return query.first()
-
 
 # tag::sometag|description::keyword
 def parse_filter(filter: str | None) -> dict:
@@ -89,36 +83,37 @@ async def create_transformation(url: str, description: str, tags: list[Tag], ass
     return photo
 
 
-# async def remove_photo(photo_id: uuid.UUID, user: User, db: Session) -> Photo | None:
-#     photo = db.query(Photo).filter(Photo.user_id == user.id).filter(Photo.id == photo_id).first()
-#     if photo:
-#         db.delete(photo)
-#         db.commit()
-#     return photo
-
-
-async def remove_photo(photo_id: uuid.UUID, db: Session) -> Photo | None:
-    photo = (
-        db.query(Photo)
-        .filter(Photo.id == photo_id)
-        .first()
-    )
+async def remove_photo(photo_id: uuid.UUID, user: User, db: Session, is_restricted: bool) -> Photo | None:
+    query = db.query(Photo)    
+    query = query.filter(Photo.id == photo_id)
+    photo = query.first()
+    if not photo:
+        return None
+    if is_restricted and photo.user_id != user.id:
+        raise AccessDeniedException    
+    
     if photo:
         db.delete(photo)
         db.commit()
     return photo
 
 
-async def update_photo_details(photo_id: uuid.UUID, body: PhotoBase, user: User, db: Session) -> Photo | None:
-    photo = db.query(Photo).filter(Photo.user_id == user.id).filter(Photo.id == photo_id).first()   
+async def update_photo_details(photo_id: uuid.UUID, body: PhotoBase, user: User, db: Session, is_restricted: bool) -> Photo | None:
+    query = db.query(Photo)
+    query = query.filter(Photo.id == photo_id)
+    photo = query.first()      
+    if not photo:
+        return None
+    if is_restricted and photo.user_id != user.id:
+        raise AccessDeniedException    
+    
     tags = [tag for tag in body.tags if not any(t.name == tag for t in photo.tags)]    
     if len(photo.tags) + len(tags) > 5:
-        raise IndexError(f"Maximum number of tags per photo is 5, and this photo already has {len(photo.tags)} tags.")
-    if photo:
-        if body.description:
-            photo.description = body.description
-        if tags:
-            photo.tags += await ensure_tags(tags=tags, db=db)
-        db.add(photo)
-        db.commit()
+        raise IndexError(f"Maximum number of tags per photo is 5, and this photo already has {len(photo.tags)} tags.")    
+    if body.description:
+        photo.description = body.description
+    if tags:
+        photo.tags += await ensure_tags(tags=tags, db=db)
+    db.add(photo)
+    db.commit()
     return photo
