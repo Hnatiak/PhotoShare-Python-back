@@ -43,7 +43,7 @@ async def edit_comment(record_id: int, body: CommentNewSchema, db: Session) -> C
     stmt = select(Comment).filter_by(id=record_id, photo_id=body.photo_id)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    result = result.scalar_one_or_none()
+    result = result.unique().scalar_one_or_none()
     if result:
         result.text = body.text
         # result.updated_at = func.now() # has defaut value in Model
@@ -73,7 +73,7 @@ async def get_comments_by_user_id(user_id: int, offset: int, limit: int, db: Ses
     return result.unique().scalars().all()
 
 
-async def get_comments_by_photo_id(photo_id: int, offset: int, limit: int, db: Session) -> list[Comment]:
+async def get_comments_by_photo_id(photo_id: uuid.UUID, offset: int, limit: int, db: Session) -> list[Comment]:
     '''
     Retrieves comments by ID of a specific photo.
     
@@ -92,7 +92,7 @@ async def get_comments_by_photo_id(photo_id: int, offset: int, limit: int, db: S
     return result.unique().scalars().all()
 
 
-async def get_comments_by_user_and_photo_ids(user_id: int, photo_id: int, offset: int, limit: int, db: Session) -> list[Comment]:
+async def get_comments_by_user_and_photo_ids(user_id: int, photo_id: uuid.UUID, offset: int, limit: int, db: Session) -> list[Comment]:
     '''
     Retrieves comments by ID of a specific author and ID of a specific photo.
     
@@ -125,7 +125,7 @@ async def delete_comment(record_id: int, db: Session) -> None:
     stmt = select(Comment).filter_by(id=record_id)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    result = result.scalar_one_or_none()
+    result = result.unique().scalar_one_or_none()
     if result:
         # await db.delete(result)
         # await db.commit()
@@ -148,7 +148,8 @@ async def get_author_by_comment_id(rec_id: int, db: Session) -> User | None:
     stmt = select(Comment).filter_by(id=rec_id)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    result = result.scalar_one_or_none()
+    # result = result.scalar_one_or_none()
+    result = result.unique().scalar_one_or_none()
     if result:
         result = result.user
 

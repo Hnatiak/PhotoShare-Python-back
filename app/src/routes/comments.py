@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database.db import get_db
 from src.services.auth import auth_service
-# from src.services.roles import admin_access, moderator_access
+from src.services.roles import admin_access, moderator_access
 from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
 from src.entity.models import User, Comment, Role
 from src.repository import comments as rep_comments
@@ -16,7 +16,7 @@ router = APIRouter(prefix='/comments', tags=["comments"])
 
 @router.post("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', example="user comment"),
-                         photo_id: int = Path(description="ID of photo to comment"),
+                         photo_id: uuid.UUID = Path(description="ID of photo to comment"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
     '''
@@ -37,7 +37,7 @@ async def create_comment(comment: str = Body(min_length=1, max_length=500, descr
 # TODO limit access to comment owner, moderator or admin
 @router.put("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_202_ACCEPTED)
 async def edit_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', example="user comment"),
-                       photo_id: int = Path(description="ID of photo to comment"),
+                       photo_id: uuid.UUID = Path(description="ID of photo to comment"),
                        rec_id: int = Query(description="ID of comment to change"),
                        db: Session = Depends(get_db),
                        current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
@@ -71,7 +71,7 @@ async def edit_comment(comment: str = Body(min_length=1, max_length=500, descrip
 
 # TODO display of comments should be restricted to registered users only?
 @router.get("/{photo_id}", response_model=list[CommentResponseSchema])
-async def get_comments_by_photo_id(photo_id: int = Path(description="ID of photo to find comments"),
+async def get_comments_by_photo_id(photo_id: uuid.UUID = Path(description="ID of photo to find comments"),
                                    offset: int = Query(default=0, ge=0, description="Records to skip in response"),
                                    limit: int = Query(default=10, ge=1, le=50, description="Records per response to show"),
                                    db: Session = Depends(get_db),
@@ -116,7 +116,7 @@ async def get_comments_by_user_id(user_id: int = Query(description="ID of author
 # TODO display of comments should be restricted to registered users only?
 @router.get("/users/{user_id}", response_model=list[CommentResponseSchema])
 async def get_comments_by_user_and_photo_id(user_id: int = Path(description="ID of author of comments"),
-                                            photo_id: int = Query(description="ID of photo to find comments"),
+                                            photo_id: uuid.UUID = Query(description="ID of photo to find comments"),
                                             offset: int = Query(default=0, ge=0, description="Records to skip in response"),
                                             limit: int = Query(default=10, ge=1, le=50, description="Records per response to show"),
                                             db: Session = Depends(get_db),
@@ -138,7 +138,7 @@ async def get_comments_by_user_and_photo_id(user_id: int = Path(description="ID 
     return result
 
 
-# @router.delete("/record/{rec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
+@router.delete("/record/{rec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
 async def delete_comment(rec_id: int = Path(description="ID of record to delete"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> None:
