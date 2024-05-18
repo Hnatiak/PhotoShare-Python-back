@@ -28,7 +28,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_blacklist_tokens_id'), 'blacklist_tokens', ['id'], unique=False)
     op.create_table('photos',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
@@ -46,7 +46,7 @@ def upgrade() -> None:
     op.create_table('comments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('photo_id', sa.Integer(), nullable=False),
+    sa.Column('photo_id', sa.UUID(), nullable=False),
     sa.Column('text', sa.String(length=500), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),

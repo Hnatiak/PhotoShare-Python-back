@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request, Path, Query
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -39,7 +40,7 @@ async def get_comments_by_user_id(user_id: int,
 
 # TODO display of comments should be restricted to registered users only?
 @router.get("/photo_id={photo_id}", response_model=list[CommentResponseSchema])
-async def get_comments_by_photo_id(photo_id: int,
+async def get_comments_by_photo_id(photo_id: uuid.UUID,
                                    offset: int = Query(default=0, ge=0, description="Records to skip in response"),
                                    limit: int = Query(default=10, ge=1, le=50, description="Records per response to show"),
                                    db: Session = Depends(get_db), current_user: User = Depends(auth_service.get_current_user)):
@@ -49,7 +50,7 @@ async def get_comments_by_photo_id(photo_id: int,
 # TODO display of comments should be restricted to registered users only?
 @router.get("/user_id={user_id}/photo_id={photo_id}", response_model=list[CommentResponseSchema])
 async def get_comments_by_photo_id(user_id: int, 
-                                   photo_id: int,
+                                   photo_id: uuid.UUID,
                                    offset: int = Query(default=0, ge=0, description="Records to skip in response"),
                                    limit: int = Query(default=10, ge=1, le=50, description="Records per response to show"),
                                    db: Session = Depends(get_db), current_user: User = Depends(auth_service.get_current_user)):
