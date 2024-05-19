@@ -90,11 +90,20 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     await repository_users.update_token(user, refresh_token, db)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
+
 @router.post("/logout")
-async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
-                 db: Session = Depends(get_db), user: User = Depends(auth_service.get_current_user)):
+async def logout(
+    background_tasks: BackgroundTasks,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+    db: Session = Depends(get_db),
+    user: User = Depends(auth_service.get_current_user),
+):
     token = credentials.credentials
     await repository_users.add_to_blacklist(token, db)
     user.refresh_token = None
     db.commit()
+    #########################
+    expired = await auth_service.get_exp_from_token(token)
+    background_tasks.add_task(repository_users.dell_from_bleck_list, expired, token, db)
+    #########################
     return {"message": "Successfully logged out"}
