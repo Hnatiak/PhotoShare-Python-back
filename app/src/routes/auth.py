@@ -98,12 +98,16 @@ async def logout(
     db: Session = Depends(get_db),
     user: User = Depends(auth_service.get_current_user),
 ):
-    token = credentials.credentials
-    await repository_users.add_to_blacklist(token, db)
-    user.refresh_token = None
-    db.commit()
-    #########################
-    expired = await auth_service.get_exp_from_token(token)
-    background_tasks.add_task(repository_users.dell_from_bleck_list, expired, token, db)
-    #########################
-    return {"message": "Successfully logged out"}
+    try:
+        token = credentials.credentials
+        await repository_users.add_to_blacklist(token, db)
+
+        user.refresh_token = None
+        db.commit()
+        #########################
+        expired = await auth_service.get_exp_from_token(token)
+        background_tasks.add_task(repository_users.dell_from_bleck_list, expired, token, db)
+        #########################
+        return {"message": "Successfully logged out"}
+    except:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are successfully logged out")
