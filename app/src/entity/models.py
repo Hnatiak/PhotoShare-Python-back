@@ -30,6 +30,8 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
     email = Column(String(250), nullable=False, unique=True)
+    phone = Column(String(13), unique=True, nullable=True, default=None)
+    birthday = Column(Date, nullable=True, default=None)
     password = Column(String(255), nullable=False)
     created_at = Column("created_at", DateTime, default=func.now())
     avatar = Column(String(255), nullable=True)
