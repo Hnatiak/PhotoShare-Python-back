@@ -13,6 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import UploadFile
 from src.conf.config import settings
 from src.entity.models import BlacklistToken
+from time import time
+from asyncio import sleep
+
 
 
 async def get_user_by_email(email: str, db: Session) -> User:
@@ -88,7 +91,6 @@ async def update_token(user: User, token: str | None, db: Session) -> None:
 #     db.commit()
 #     return user
 
-
 # async def edit_my_profile(avatar: UploadFile, new_username: str, user: User, db: AsyncSession):
 #     if new_username:
 #         user.username = new_username
@@ -99,6 +101,8 @@ async def update_token(user: User, token: str | None, db: Session) -> None:
 #     await db.commit()
 #     await db.refresh(user)
 #     return user
+
+
 
 BLACKLISTED_TOKENS = "blacklisted_tokens"
 
@@ -124,3 +128,12 @@ async def is_token_blacklisted(token: str) -> bool:
 
 async def get_users(skip: int, limit: int, db: Session) -> List[User]:
     return db.query(User).offset(skip).limit(limit).all()
+
+async def dell_from_bleck_list(expired, token: str, db: AsyncSession) -> None:
+    bl_token = db.query(BlacklistToken).filter(BlacklistToken.token == token).first()
+    time_now = time()
+    time_for_sleep = expired - time_now
+    await sleep(time_for_sleep)
+    db.delete(bl_token)
+    db.commit()
+
