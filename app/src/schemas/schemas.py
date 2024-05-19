@@ -22,6 +22,10 @@ class UserUpdateSchema(BaseModel):
     birthday: date
 
 
+class  RoleUpdateSchema(BaseModel):
+    role: Role
+
+
 class UserDb(BaseModel):
     id: int
     username: str
