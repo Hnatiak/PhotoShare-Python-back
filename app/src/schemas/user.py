@@ -9,6 +9,8 @@ class UserSchema(BaseModel):
     username: str = Field(min_length=3, max_length=50)
     # last_name: str = Field(min_length=3, max_length=50)
     email: EmailStr
+    phone: str = Field(min_length=10, max_length=13)
+    birthday: date
     password: str = Field(min_length=10, max_length=50)
 
 class UserResponse(BaseModel):

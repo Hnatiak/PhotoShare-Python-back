@@ -2,32 +2,58 @@ import uuid
 import enum
 from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
-from pydantic import BaseModel, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
+from pydantic import BaseModel, ConfigDict, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
 # from pydantic_extra_types.phone_numbers import PhoneNumber
 from src.entity.models import Role, AssetType
+from datetime import date
 
 
 class UserModel(BaseModel):
     username: str = Field(min_length=2, max_length=16)
     email: str
+    phone: str = Field(min_length=10, max_length=13)
+    birthday: date
     password: str = Field(min_length=4, max_length=10)
+
+
+class UserUpdateSchema(BaseModel):
+    username: str = Field(min_length=3, max_length=40)
+    phone: str = Field(min_length=10, max_length=13)
+    birthday: date
+
+
+class  RoleUpdateSchema(BaseModel):
+    role: Role
 
 
 class UserDb(BaseModel):
     id: int
     username: str
     email: str
+    phone: str | None
+    birthday: date | None
     created_at: datetime
-    avatar: str
+    avatar: str | None
     role: Role
 
     class Config:
         from_attributes = True
 
 
+# class UserResponse(BaseModel):
+#     user: UserDb
+#     detail: str = "User successfully created"
+
 class UserResponse(BaseModel):
-    user: UserDb
-    detail: str = "User successfully created"
+    id: int
+    username: str
+    email: str
+    phone: str | None
+    birthday: date | None
+    created_at: datetime
+    avatar: str | None
+    role: Role
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponseAll(BaseModel):
