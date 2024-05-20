@@ -59,8 +59,8 @@ async def update_user(user_id: int, body: UserUpdateSchema, db: Session):
     if user is None:
         return None
     user.username = body.username
-    user.phone = body.phone
-    user.birthday = body.birthday
+    # user.phone = body.phone
+    # user.birthday = body.birthday
     db.commit()
     db.refresh(user)
     return user
