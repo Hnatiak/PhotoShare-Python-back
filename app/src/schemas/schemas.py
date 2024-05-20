@@ -11,15 +11,13 @@ from datetime import date
 class UserModel(BaseModel):
     username: str = Field(min_length=2, max_length=16)
     email: str
-    phone: str = Field(min_length=10, max_length=13)
-    birthday: date
-    password: str = Field(min_length=4, max_length=10)
+    password: str = Field(min_length=4, max_length=20)
 
 
 class UserUpdateSchema(BaseModel):
     username: str = Field(min_length=3, max_length=40)
-    phone: str = Field(min_length=10, max_length=13)
-    birthday: date
+    # phone: str = Field(min_length=10, max_length=13)
+    # birthday: date
 
 
 class  RoleUpdateSchema(BaseModel):
@@ -30,10 +28,10 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: str
-    phone: str | None
-    birthday: date | None
+    # phone: str | None
+    # birthday: date | None
     created_at: datetime
-    avatar: str | None
+    avatar: str
     role: Role
 
     class Config:
