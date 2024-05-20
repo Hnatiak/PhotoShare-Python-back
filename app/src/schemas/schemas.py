@@ -27,7 +27,7 @@ class UserUpdateSchema(BaseModel):
     birthday: date
 
 
-class  RoleUpdateSchema(BaseModel):
+class RoleUpdateSchema(BaseModel):
     role: Role
 
 
@@ -35,8 +35,8 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: str
-    phone: str
-    birthday: date
+    phone: str | None
+    birthday: date | None
     created_at: datetime
     avatar: str
     role: Role
