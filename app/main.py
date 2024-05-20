@@ -12,7 +12,7 @@ import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
 from src.conf.config import settings
-from src.database.db import engine
+from src.database.db import engine, SessionLocal
 from src.routes import auth, comments, users, photos
 
 
@@ -34,6 +34,7 @@ async def lifespan(_):
     await FastAPILimiter.init(r)
     yield
     #shutdown logic goes here    
+    SessionLocal.close_all()
     engine.dispose()
     await r.close(True)
     await FastAPILimiter.close()
