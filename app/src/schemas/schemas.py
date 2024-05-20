@@ -11,9 +11,14 @@ from datetime import date
 class UserModel(BaseModel):
     username: str = Field(min_length=2, max_length=16)
     email: str
-    phone: str = Field(min_length=10, max_length=13)
-    birthday: date
     password: str = Field(min_length=4, max_length=10)
+
+# class UserModel(BaseModel):
+#     username: str = Field(min_length=2, max_length=16)
+#     email: str
+#     phone: str = Field(min_length=10, max_length=13)
+#     birthday: date
+#     password: str = Field(min_length=4, max_length=10)
 
 
 class UserUpdateSchema(BaseModel):
@@ -30,30 +35,28 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: str
-    phone: str | None
-    birthday: date | None
     created_at: datetime
-    avatar: str | None
+    avatar: str
     role: Role
 
     class Config:
         from_attributes = True
 
 
-# class UserResponse(BaseModel):
-#     user: UserDb
-#     detail: str = "User successfully created"
-
 class UserResponse(BaseModel):
-    id: int
-    username: str
-    email: str
-    phone: str | None
-    birthday: date | None
-    created_at: datetime
-    avatar: str | None
-    role: Role
-    model_config = ConfigDict(from_attributes=True)
+    user: UserDb
+    detail: str = "User successfully created"
+
+# class UserResponse(BaseModel):
+#     id: int
+#     username: str
+#     email: str
+#     phone: str | None
+#     birthday: date | None
+#     created_at: datetime
+#     avatar: str | None
+#     role: Role
+#     model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponseAll(BaseModel):
