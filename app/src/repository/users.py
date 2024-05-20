@@ -3,11 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 from src.entity.models import User
-from src.schemas.schemas import UserModel, UserUpdateSchema, RoleUpdateSchema
+from src.schemas.schemas import UserSchema, UserUpdateSchema, RoleUpdateSchema
 import redis.asyncio as redis
 from sqlalchemy.future import select
-
-from src.schemas.user import UserResponse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import UploadFile
@@ -26,7 +24,7 @@ async def get_user_by_id(user_id: int, db: Session) -> User:
     return db.query(User).filter(User.id == user_id).first()
 
 
-async def create_user(body: UserModel, db: Session) -> User:
+async def create_user(body: UserSchema, db: Session) -> User:
     avatar = None
     try:
         g = Gravatar(body.email)
@@ -59,8 +57,8 @@ async def update_user(user_id: int, body: UserUpdateSchema, db: Session):
     if user is None:
         return None
     user.username = body.username
-    # user.phone = body.phone
-    # user.birthday = body.birthday
+    user.phone = body.phone
+    user.birthday = body.birthday
     db.commit()
     db.refresh(user)
     return user

@@ -9,8 +9,8 @@ from src.database.db import get_db
 from src.repository import users as repository_users
 from src.services.auth import auth_service
 
-from src.schemas.schemas import UserResponse, UserModel, TokenModel
-from src.schemas.user import RequestEmail
+from src.schemas.schemas import UserResponse, UserSchema, TokenModel
+from src.schemas.schemas import RequestEmail
 from src.repository.users import add_to_blacklist
 
 from src.entity.models import User
@@ -20,7 +20,7 @@ security = HTTPBearer()
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(body: UserModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
+async def signup(body: UserSchema, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
     exist_user = await repository_users.get_user_by_email(body.email, db)
     if exist_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")

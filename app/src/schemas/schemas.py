@@ -8,10 +8,10 @@ from src.entity.models import Role, AssetType
 from datetime import date
 
 
-class UserModel(BaseModel):
-    username: str = Field(min_length=2, max_length=16)
-    email: str
-    password: str = Field(min_length=4, max_length=10)
+class UserSchema(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(min_length=5, max_length=50)
 
 # class UserModel(BaseModel):
 #     username: str = Field(min_length=2, max_length=16)
@@ -26,6 +26,10 @@ class UserUpdateSchema(BaseModel):
     phone: str = Field(min_length=10, max_length=13)
     birthday: date
 
+class TokenSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
 
 class RoleUpdateSchema(BaseModel):
     role: Role
@@ -59,17 +63,6 @@ class UserDb(BaseModel):
 class UserResponse(BaseModel):
     user: UserDb
     detail: str = "User successfully created"
-
-# class UserResponse(BaseModel):
-#     id: int
-#     username: str
-#     email: str
-#     phone: str | None
-#     birthday: date | None
-#     created_at: datetime
-#     avatar: str | None
-#     role: Role
-#     model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponseAll(BaseModel):
