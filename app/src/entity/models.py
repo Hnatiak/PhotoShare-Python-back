@@ -25,14 +25,15 @@ class AssetType(enum.Enum):
     sepia: str = 'sepia'
     outline: str = 'outline'
 
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
     email = Column(String(250), nullable=False, unique=True)
+    password = Column(String(255), nullable=False)
     phone = Column(String(13), unique=True, nullable=True, default=None)
     birthday = Column(Date, nullable=True, default=None)
-    password = Column(String(255), nullable=False)
     created_at = Column("created_at", DateTime, default=func.now())
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
