@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 
 from src.entity.models import User, Role
 
-# from src.schemas.user import UserResponse
 from src.schemas.schemas import UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema
 from src.services.auth import auth_service
 
