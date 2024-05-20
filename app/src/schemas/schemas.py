@@ -35,12 +35,25 @@ class UserDb(BaseModel):
     id: int
     username: str
     email: str
+    phone: str
+    birthday: date
     created_at: datetime
     avatar: str
     role: Role
 
     class Config:
         from_attributes = True
+
+# class UserDb(BaseModel):
+#     id: int
+#     username: str
+#     email: str
+#     created_at: datetime
+#     avatar: str
+#     role: Role
+#
+#     class Config:
+#         from_attributes = True
 
 
 class UserResponse(BaseModel):
