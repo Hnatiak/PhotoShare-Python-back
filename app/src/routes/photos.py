@@ -22,8 +22,6 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 rl_times = settings.rate_limiter_times
 rl_seconds = settings.rate_limiter_seconds
 
-# aiuwtgdiwude
-
 
 ##############################
 async def is_operaation_restricted_to_user(
