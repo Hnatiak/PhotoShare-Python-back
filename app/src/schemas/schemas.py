@@ -65,6 +65,18 @@ class UserResponse(BaseModel):
     detail: str = "User successfully created"
 
 
+class SearchUserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    phone: str | None
+    birthday: date | None
+    created_at: datetime
+    avatar: str
+    role: Role
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserResponseAll(BaseModel):
     user: UserDb
 

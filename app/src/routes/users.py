@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from src.entity.models import User, Role
 
-from src.schemas.schemas import UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema
+from src.schemas.schemas import UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema, SearchUserResponse
 from src.services.auth import auth_service
 
 from src.repository import users as repositories_users
@@ -35,7 +35,7 @@ allowed_get_all_users = RoleChecker([Role.admin])
 
 @router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=SearchUserResponse,
     dependencies=[Depends(RateLimiter(times=1, seconds=20))],
 )
 async def get_current_user(user: User = Depends(auth_service.get_current_user)):
@@ -81,7 +81,7 @@ async def update_avatar(
 
 @router.get(
     "/all",
-    response_model=List[UserResponse],
+    response_model=List[SearchUserResponse],
     # dependencies=[Depends(allowed_get_all_users)],
 )
 async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
@@ -89,7 +89,7 @@ async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(g
     return users
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=SearchUserResponse)
 async def get_user(
     user_id: int = Path(ge=1),
     db: AsyncSession = Depends(get_db),
@@ -105,7 +105,7 @@ async def get_user(
 
 @router.put(
     "/role/{user_id}",
-    response_model=UserResponse,
+    response_model=SearchUserResponse,
 )
 async def chandge_role(
     user_id: int,
