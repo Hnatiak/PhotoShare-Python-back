@@ -38,7 +38,7 @@ async def create_user(body: UserSchema, db: Session) -> User:
     return new_user
 
 
-async def chandge_role(user_id: int, body: RoleUpdateSchema, db: Session):
+async def change_role(user_id: int, body: RoleUpdateSchema, db: Session):
     stmt = select(User).filter_by(id=user_id)
     result = db.execute(stmt)
     user = result.scalar_one_or_none()
