@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     cloudinary_name: str
     cloudinary_api_key: str
     cloudinary_api_secret: str
+    cloudinary_app_prefix: str = "PhotoShare"
 
     model_config = ConfigDict(extra='ignore', env_file=env_file if env_file.exists() else None, env_file_encoding = "utf-8")
 

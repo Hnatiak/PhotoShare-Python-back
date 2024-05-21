@@ -5,13 +5,14 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone #UTC
 from sqlalchemy.orm import Session
 
 from src.conf.config import settings
 from src.database.db import get_db
 from src.repository import users as repository_users
-
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -37,7 +38,7 @@ class Auth:
         encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_access_token
 
-    # define a function to generate a new refresh token 
+    # define a function to generate a new refresh token
     async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
         to_encode = data.copy()
         if expires_delta:
@@ -81,7 +82,7 @@ class Auth:
         if user is None:
             raise credentials_exception
         return user
-    
+
     def create_email_token(self, data: dict):
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(days=7)
@@ -98,7 +99,5 @@ class Auth:
             print(e)
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                                 detail="Invalid token for email verification")
-
-
 
 auth_service = Auth()
