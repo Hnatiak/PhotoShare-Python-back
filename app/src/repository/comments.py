@@ -3,6 +3,8 @@ import uuid
 from sqlalchemy.orm import Session
 from sqlalchemy import select, text, func
 # from datetime import datetime
+from sqlalchemy import select, text, func
+# from datetime import datetime
 
 from src.entity.models import Comment, User, Photo
 from src.schemas.schemas import CommentNewSchema

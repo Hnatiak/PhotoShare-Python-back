@@ -1,10 +1,10 @@
 import io
 import uuid
 import enum
-from sqlalchemy.orm import relationship, Mapped, mapped_column, backref
+from sqlalchemy.orm import relationship, Mapped, mapped_column, backref, declarative_base
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
-from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import UUID, Column, Integer, LargeBinary, String, Date, Boolean, func
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy import Enum
