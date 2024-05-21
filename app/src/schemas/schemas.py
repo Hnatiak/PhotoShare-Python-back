@@ -115,6 +115,11 @@ class PhotoBase(BaseModel):
     asset_type: AssetType = AssetType.origin
 
 
+class PhotoUpdate(BaseModel):   
+    description: Optional[str] = Field(None, max_length=2200)    
+    tags: Optional[conset(str, max_length=5)] # type: ignore
+
+
 class LinkType(enum.Enum):
     url: str = "URL"
     qr_code: str = "QR Code"
