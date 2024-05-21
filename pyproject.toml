@@ -27,6 +27,7 @@ pytest = "^8.2.0"
 pytest-cov = "^5.0.0"
 aioredis = "^2.0.1"
 qrcode = "^7.4.2"
+redis-lru = "^0.1.2"
 
 
 [tool.poetry.group.dev.dependencies]

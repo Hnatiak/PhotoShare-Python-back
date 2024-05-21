@@ -12,7 +12,7 @@ import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
 from src.conf.config import settings
-from src.database.db import engine, SessionLocal
+from src.database.db import engine, SessionLocal, redis_client_async, redis_client
 from src.routes import auth, comments, users, photos
 
 
@@ -26,17 +26,13 @@ async def lifespan(_):
     #startup initialization goes here
     logger.info("Knock-knock...")
     logger.info("Uvicorn has you...")
-    r = await redis.Redis(host=settings.redis_host, 
-                          port=settings.redis_port, 
-                          db=0, encoding="utf-8",
-                          decode_responses=True
-                          )
-    await FastAPILimiter.init(r)
+    await FastAPILimiter.init(redis_client_async)
     yield
     #shutdown logic goes here    
     SessionLocal.close_all()
     engine.dispose()
-    await r.close(True)
+    await redis_client_async.close(True)
+    redis_client.close()
     await FastAPILimiter.close()
     logger.info("Good bye, Mr. Anderson")
 
