@@ -7,12 +7,13 @@ from sqlalchemy.orm import Session
 from fastapi_limiter.depends import RateLimiter
 from src.database.db import get_db
 from src.entity.models import User, AssetType, Role
-from src.repository import photos as repository_photos, qrcode as repository_qrcode
+from src.repository.photos import repository_photos 
+from src.repository import qrcode as repository_qrcode
 from src.services.auth import auth_service
 from src.services.photo import CloudPhotoService
-from src.services.qrcode import qrcode_service
-from fastapi import APIRouter, Form, HTTPException, Depends, Query, status, UploadFile, File
-from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType
+# from src.services.qrcode import qrcode_service
+from fastapi import APIRouter, Form, HTTPException, Depends, Path, Query, status, UploadFile, File
+from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType, PhotoUpdate
 from src.conf.config import settings
 from src.repository.exceptions import AccessDeniedException
 
@@ -52,7 +53,7 @@ async def read_photo(photo_id: uuid.UUID,
                      db: Session = Depends(get_db),
                      current_user: User = Depends(auth_service.get_current_user)
                      ):
-    photo = await repository_photos.get_photo(id=photo_id, user=current_user, db=db)    
+    photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     return photo
@@ -61,18 +62,18 @@ async def read_photo(photo_id: uuid.UUID,
 @router.get("/link/{photo_id}", description="No more than 10 requests per minute",
             dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
 async def read_photo(photo_id: uuid.UUID,
-                     link_type: LinkType,
+                     link_type: LinkType = LinkType.qr_code,
                      db: Session = Depends(get_db),
                      current_user: User = Depends(auth_service.get_current_user)
                      ):
-    photo = await repository_photos.get_photo(id=photo_id, user=current_user, db=db)
+    photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     if link_type.name == LinkType.url.name:
         return photo.url
-    qr_code = await repository_qrcode.read_qr_code(photo_id=photo.id, user=current_user, db=db)
-    if qr_code:
-        return StreamingResponse(content=qr_code, media_type="image/png")
+    # qr_code = await repository_qrcode.read_qr_code(photo_id=photo.id, user=current_user, db=db)
+    # if qr_code:
+    #     return StreamingResponse(content=qr_code, media_type="image/png")
     return ""
 
 
@@ -80,7 +81,7 @@ async def read_photo(photo_id: uuid.UUID,
              description="No more than 10 requests per minute", 
              dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
 async def create_photo(file: UploadFile = File(),
-                       description: str = Form(default=None, min_length=1, max_length=500, description="Photo description", title='Comment'),
+                       description: str = Form(default=None, min_length=1, max_length=500, description="Photo description"),
                        tags: list[str] = Form(default=[], description="Up to 5 tags"),
                        db: Session = Depends(get_db),
                        current_user: User = Depends(auth_service.get_current_user)):
@@ -91,8 +92,8 @@ async def create_photo(file: UploadFile = File(),
         url = CloudPhotoService.get_photo_url(public_id=public_id, asset=asset)
         body = PhotoBase(url=url, description=description, tags=tags[0].split(","))
         photo = await repository_photos.create_photo(body=body, user=current_user, db=db)
-        qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
-        await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
+        # qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
+        # await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
     except ValidationError as err:
         raise HTTPException(detail=jsonable_encoder(err.errors()), status_code=status.HTTP_400_BAD_REQUEST)    
     return photo
@@ -102,17 +103,17 @@ async def create_photo(file: UploadFile = File(),
     description="No more than 10 requests per minute",
     dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
 async def transform_photo(photo_id: uuid.UUID,
-                          transformation: AssetType,
+                          transformation: AssetType = AssetType.origin,
                           db: Session = Depends(get_db),
                           current_user: User = Depends(auth_service.get_current_user)
                           ):
     photo = None
     try:
-        photo = await repository_photos.get_photo(id=photo_id, user=current_user, db=db)
+        photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)
         if photo is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
         if photo.asset_type != AssetType.origin:
-            raise HTTPException(detail="Can't transform due to this photo has already been transformed",
+            raise HTTPException(detail="Can't transform because of this photo has already been transformed",
                                 status_code=status.HTTP_400_BAD_REQUEST)
         transformated_url = CloudPhotoService.transformate_photo(url=photo.url, asset_type=transformation)
         photo = await repository_photos.create_transformation(url=transformated_url,
@@ -121,8 +122,8 @@ async def transform_photo(photo_id: uuid.UUID,
                                                               asset_type=transformation,
                                                               user=current_user,
                                                               db=db)
-        qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
-        await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
+        # qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
+        # await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
     except HTTPException as err:
         raise err
     except Exception as err:
@@ -160,7 +161,7 @@ async def update_photo_details(photo_id: uuid.UUID,
                                ):
     photo = None
     try:
-        body = PhotoBase(description=photo_description, tags=tags[0].split(","))
+        body = PhotoUpdate(description=photo_description, tags=tags[0].split(","))
         photo = await repository_photos.update_photo_details(photo_id=photo_id, 
                                                              body=body, 
                                                              user=current_user, 
