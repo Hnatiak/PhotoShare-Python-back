@@ -22,9 +22,9 @@ class UserSchema(BaseModel):
 
 
 class UserUpdateSchema(BaseModel):
-    username: str = Field(min_length=3, max_length=40)
-    phone: str = Field(min_length=10, max_length=13)
-    birthday: date
+    username: Optional[str] = Field(min_length=3, max_length=40)
+    phone: Optional[str] = Field(min_length=10, max_length=13)
+    birthday: Optional[date] 
 
 class TokenSchema(BaseModel):
     access_token: str
