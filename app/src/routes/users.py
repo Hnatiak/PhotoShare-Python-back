@@ -56,7 +56,7 @@ async def get_current_user(user: User = Depends(auth_service.get_current_user)):
 #     return updated_user
 
 
-@router.put("/{user_id}")
+@router.put("/")
 async def update_user(
     body: UserUpdateSchema,
     db: AsyncSession = Depends(get_db),
@@ -127,7 +127,7 @@ async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(g
     return users
 
 
-@router.get("/", response_model=SearchUserResponse)
+@router.get("/{user_id}", response_model=SearchUserResponse)
 async def get_user(
     user_id: int = Path(ge=1),
     db: AsyncSession = Depends(get_db),
