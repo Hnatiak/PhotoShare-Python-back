@@ -45,8 +45,9 @@ class UserDb(BaseModel):
     avatar: str
     role: Role
 
-    class Config:
-        from_attributes = True
+    # class Config:
+    #     from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # class UserDb(BaseModel):
 #     id: int
@@ -80,8 +81,9 @@ class SearchUserResponse(BaseModel):
 class UserResponseAll(BaseModel):
     user: UserDb
 
-    class Config:
-        from_attributes = True
+    # class Config:
+    #     from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenModel(BaseModel):
@@ -127,8 +129,9 @@ class LinkType(enum.Enum):
 class TagBase(BaseModel):
     name: str
 
-    class Config:
-        from_attributes = True
+    # class Config:
+    #     from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # tags output format is controlled here
 
@@ -155,8 +158,9 @@ class PhotoResponse(PhotoBase):
     tags: CustomStr
     comments: list[SimpleComment]
 
-    class Config:
-        from_attributes = True
+    # class Config:
+    #     from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PhotoTransform(BaseModel):
