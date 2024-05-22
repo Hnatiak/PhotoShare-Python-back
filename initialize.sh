@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
-pip install poetry
-poetry update
-alembic upgrade head
+python -m  pip install poetry
+python -m  poetry update
+python -m  alembic upgrade head
