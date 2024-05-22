@@ -64,12 +64,12 @@ async def update_user(user_id: int, body: UserUpdateSchema, db: Session):
     return user
 
 
-async def update_avatar(email: str, url: str, db: AsyncSession):
-    contact = await get_user_by_email(email, db)
-    contact.avatar = url
+async def update_avatar(email: str, url: str, db: Session):
+    user = await get_user_by_email(email, db)
+    user.avatar = url
     db.commit()
-    db.refresh(contact)
-    return contact
+    db.refresh(user)
+    return user
 
 
 async def confirmed_email(email: str, db: Session) -> None:
@@ -126,6 +126,7 @@ async def is_token_blacklisted(token: str) -> bool:
 
 async def get_users(skip: int, limit: int, db: Session) -> List[User]:
     return db.query(User).offset(skip).limit(limit).all()
+
 
 async def dell_from_bleck_list(expired, token: str, db: AsyncSession) -> None:
     bl_token = db.query(BlacklistToken).filter(BlacklistToken.token == token).first()
