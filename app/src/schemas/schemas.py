@@ -22,9 +22,9 @@ class UserSchema(BaseModel):
 
 
 class UserUpdateSchema(BaseModel):
-    username: str = Field(min_length=3, max_length=40)
-    phone: str = Field(min_length=10, max_length=13)
-    birthday: date
+    username: Optional[str] = Field(min_length=3, max_length=40)
+    phone: Optional[str] = Field(min_length=10, max_length=13)
+    birthday: Optional[date] 
 
 class TokenSchema(BaseModel):
     access_token: str
@@ -113,6 +113,11 @@ class PhotoBase(BaseModel):
     description: Optional[str] = Field(None, max_length=2200)    
     tags: Optional[conset(str, max_length=5)] # type: ignore
     asset_type: AssetType = AssetType.origin
+
+
+class PhotoUpdate(BaseModel):   
+    description: Optional[str] = Field(None, max_length=2200)    
+    tags: Optional[conset(str, max_length=5)] # type: ignore
 
 
 class LinkType(enum.Enum):
