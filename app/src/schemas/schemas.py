@@ -36,7 +36,7 @@ class RoleUpdateSchema(BaseModel):
 
 
 class UserDb(BaseModel):
-    id: int
+    id: int = 1
     username: str
     email: str
     phone: str | None
