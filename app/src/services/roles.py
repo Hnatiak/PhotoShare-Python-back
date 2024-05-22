@@ -16,3 +16,6 @@ class RoleChecker:
 
 admin_access = RoleChecker([Role.admin, Role.moderator])
 moderator_access = RoleChecker([Role.moderator])
+
+async def is_owner(current_user: User, item_owner_id: int):
+    return current_user.id == item_owner_id

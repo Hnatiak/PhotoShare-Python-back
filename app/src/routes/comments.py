@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database.db import get_db
 from src.services.auth import auth_service
-from src.services.roles import admin_access, moderator_access
+from src.services.roles import admin_access, moderator_access, is_owner
 from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
 from src.entity.models import User, Comment, Role
 from src.repository import comments as rep_comments
@@ -15,7 +15,7 @@ router = APIRouter(prefix='/comments', tags=["comments"])
 
 
 @router.post("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_201_CREATED)
-async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', example="user comment"),
+async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', examples=["user comment"]),
                          photo_id: uuid.UUID = Path(description="ID of photo to comment"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
@@ -36,8 +36,8 @@ async def create_comment(comment: str = Body(min_length=1, max_length=500, descr
 
 # TODO limit access to comment owner, moderator or admin
 @router.put("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_202_ACCEPTED)
-async def edit_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', example="user comment"),
-                       photo_id: uuid.UUID = Path(description="ID of photo to comment"),
+async def edit_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', examples=["user comment"]),
+                    #    photo_id: uuid.UUID = Path(description="ID of photo to comment"),
                        rec_id: int = Query(description="ID of comment to change"),
                        db: Session = Depends(get_db),
                        current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
@@ -53,20 +53,25 @@ async def edit_comment(comment: str = Body(min_length=1, max_length=500, descrip
     Returns:
         obj: 'Comment' | None: Comment with ID or None.
     '''
+    
+    record = await rep_comments.get_comment_by_id(rec_id=rec_id, db=db)
+    # author = await rep_comments.get_author_by_comment_id(rec_id=rec_id, db=db)
+    
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Record ID not found")
 
-    author = await rep_comments.get_author_by_comment_id(rec_id=rec_id, db=db)
-
-    # if (current_user.role == Role.user) and (author.id != current_user.id):
-    if (current_user.role not in moderator_access.allowed_roles) and (author.id != current_user.id):
-        # print(current_user.role, current_user.id, author.id)
+    current_user_is_owner = is_owner(current_user=current_user, item_owner_id=record.user_id)
+    # if (current_user.role not in moderator_access.allowed_roles) and (author.id != current_user.id):
+    if (current_user.role not in moderator_access.allowed_roles) and not current_user_is_owner:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail='Access forbidden')
 
-    body = CommentNewSchema(photo_id=photo_id, text=comment)
-    result = await rep_comments.edit_comment(record_id=rec_id, body=body, db=db)
-    if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Record ID or photo ID not found")
+    # body = CommentNewSchema(photo_id=photo_id, text=comment)
+    # result = await rep_comments.edit_comment(record_id=rec_id, body=body, db=db)
+    result = await rep_comments.edit_comment(record_id=rec_id, comment=comment, db=db)
+    # result = await rep_comments.update_comment(record=record, comment=comment, db=db)
+
     return result
 
 # TODO display of comments should be restricted to registered users only?
