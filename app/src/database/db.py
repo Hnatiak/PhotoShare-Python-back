@@ -13,12 +13,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
 
 redis_client_async = redis_async.Redis(host=settings.redis_host, 
                         port=settings.redis_port, 
-                        db=0, encoding="utf-8",
-                        decode_responses=True
+                        db=0 
                         )
 
-redis_client = redis.StrictRedis(host=settings.redis_host, 
-                        port=settings.redis_port)
 # Dependency
 def get_db():
     

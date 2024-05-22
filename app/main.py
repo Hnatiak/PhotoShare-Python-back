@@ -12,7 +12,7 @@ import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
 from src.conf.config import settings
-from src.database.db import engine, SessionLocal, redis_client_async, redis_client
+from src.database.db import engine, SessionLocal, redis_client_async
 from src.routes import auth, comments, users, photos
 
 
@@ -22,19 +22,20 @@ origins = settings.cors_origins.split('|')
 
 
 @asynccontextmanager
-async def lifespan(_):
-    #startup initialization goes here
+async def lifespan(test: FastAPI):
+    #startup initialization goes here    
     logger.info("Knock-knock...")
     logger.info("Uvicorn has you...")
     await FastAPILimiter.init(redis_client_async)
+    #await send({"type": "lifespan.startup.complete"})
     yield
     #shutdown logic goes here    
     SessionLocal.close_all()
     engine.dispose()
     await redis_client_async.close(True)
-    redis_client.close()
     await FastAPILimiter.close()
     logger.info("Good bye, Mr. Anderson")
+    #await send({"type": "lifespan.shutdown.complete"})
 
 
 app = FastAPI(lifespan=lifespan)
@@ -62,3 +63,4 @@ if __name__ == '__main__':
         uvicorn.run("main:app", host='0.0.0.0', port=8000, reload=True)
     except KeyboardInterrupt:
         os.kill(os.getpid(), signal.SIGBREAK)
+        os.kill(os.getpid(), signal.SIGTERM) 

@@ -5,14 +5,13 @@ import pickle
 import uuid
 import logging
 import uvicorn.logging
-from redis import Redis
-from redis_lru import RedisLRU
-from typing import List
+from redis.asyncio import Redis
+from typing import Hashable, List
 from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import Session, joinedload, Query
 from sqlalchemy.orm.relationships import _RelationshipDeclared, RelationshipProperty
 from src.entity.models import Base
-from src.database.db import redis_client
+from src.database.db import redis_client_async
 
 
 logger = logging.getLogger(uvicorn.logging.__name__)
@@ -36,21 +35,21 @@ class QueryExecutor (ABC):
 
 class CacheableQuery(ABC):
     @abstractmethod
-    def invalidate_cache_for_all(self):
+    async def invalidate_cache_for_all(self):
         pass
 
     @abstractmethod
-    def invalidate_cache_for_first(self, id_key):
+    async def invalidate_cache_for_first(self, id_key):
         pass
     
     @abstractmethod
-    def invalidate_cache_for_scalar(self, id_key):
+    async def invalidate_cache_for_scalar(self, id_key):
         pass
 
-class CacheableQueryExecutor(QueryExecutor, CacheableQuery, RedisLRU):
+class CacheableQueryExecutor(QueryExecutor, CacheableQuery):
     def __init__(self, ttl: int = None) -> None:
-        RedisLRU.__init__(self, client = redis_client)
-        self.ttl = ttl
+        self.client = redis_client_async
+        self.ttl = ttl or 15*60
         self.prefix = id(self)
         self.all_prefix = f"{self.prefix}_all_"
         self.first_prefix = f"{self.prefix}_first_"
@@ -64,6 +63,29 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery, RedisLRU):
         except TypeError:
             raise ArgsUnhashable() 
     
+    async def __getitem__(self, key):
+        if not await self.client.exists(key):
+            raise KeyError()
+        else:
+            result = await self.client.get(key)
+            return pickle.loads(result)
+
+    async def _set(self, key, value, ttl=None):
+        value = pickle.dumps(value)
+        await self.client.set(key, value)
+        await self.client.expire(key, ttl)        
+
+    async def _get(self, key, default=None):
+        """
+        Fetch a given key from the cache. If the key does not exist, return
+        default, which itself defaults to None.
+        """
+
+        try:
+            return await self[key]
+        except KeyError:
+            return default
+
     async def __get_all(self, query: Query):
         return query.all()
     
@@ -87,13 +109,13 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery, RedisLRU):
         try:
             statement = query.statement.compile()
             cache_key = CacheableQueryExecutor.__get_cache_key(prefix=self.all_prefix, key = (str(statement), str(statement.params)))   
-            value = self.get(cache_key)
+            value = await self._get(cache_key)
             if not value:          
                 logger.info(f"Redis Cache: MISS - no record for {cache_key} found")
                 query = self.__add_joinedload(query)
                 value = await self.__get_all(query=query)
                 if value:
-                    self.set(cache_key, value, self.ttl)
+                    await self._set(cache_key, value, self.ttl)
                     logger.info(f"Redis Cache: NEW RECORD with {cache_key} added") 
             else: 
                 logger.info(f"Redis Cache: SUCCESS - record for {cache_key} found")  
@@ -106,13 +128,13 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery, RedisLRU):
             return await self.__get_first(query=query)
         try:
             cache_key = CacheableQueryExecutor.__get_cache_key(prefix=self.first_prefix, key=id_key)            
-            value = self.get(cache_key)
+            value = await self._get(cache_key)
             if not value:
                 logger.info(f"Redis Cache: MISS - no record for {cache_key} found")                
                 query = self.__add_joinedload(query)
                 value = await self.__get_first(query=query)
                 if value:
-                    self.set(cache_key, value, self.ttl)
+                    await self._set(cache_key, value, self.ttl)
                     logger.info(f"Redis Cache: NEW RECORD with {cache_key} added")
             else: 
                 logger.info(f"Redis Cache: SUCCESS - record for {cache_key} found")  
@@ -125,13 +147,13 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery, RedisLRU):
             return await self.__get_scalar(query=query)
         try:
             cache_key = CacheableQueryExecutor.__get_cache_key(prefix=self.scalar_prefix, key=id_key)            
-            value = self.get(cache_key)
+            value = await self._get(cache_key)
             if not value:
                 logger.info(f"Redis Cache: MISS - no record for {cache_key} found")                
                 query = self.__add_joinedload(query)
                 value = await self.__get_scalar(query=query)
                 if value:
-                    self.set(cache_key, value, self.ttl)
+                    await self._set(cache_key, value, self.ttl)
                     logger.info(f"Redis Cache: NEW RECORD with {cache_key} added")
             else: 
                 logger.info(f"Redis Cache: SUCCESS - record for {cache_key} found")  
@@ -139,23 +161,22 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery, RedisLRU):
         except ArgsUnhashable:
             return await self.__get_scalar(query=query)   
         
-    def invalidate_cache_for_all(self):
+    async def invalidate_cache_for_all(self):
         if self.client:
             pattern = f"{self.all_prefix}*"
-
-            for cache_key in self.client.scan_iter(pattern):
-                self.client.delete(cache_key)
+            async for cache_key in self.client.scan_iter(pattern):
+                await self.client.delete(cache_key)
                 logger.info(f"Redis Cache: record with {cache_key} invalidated")
 
-    def invalidate_cache_for_first(self, id_key):
+    async def invalidate_cache_for_first(self, id_key):
         if self.client:
             cache_key = CacheableQueryExecutor.__get_cache_key(prefix=self.first_prefix, key=id_key)
-            response = self.client.delete(cache_key)  
+            await self.client.delete(cache_key)  
             logger.info(f"Redis Cache: record with {cache_key} invalidated")      
     
-    def invalidate_cache_for_scalar(self, id_key):
+    async def invalidate_cache_for_scalar(self, id_key):
         if self.client:
             cache_key = CacheableQueryExecutor.__get_cache_key(prefix=self.scalar_prefix, key=id_key)
-            response = self.client.delete(cache_key)  
+            await self.client.delete(cache_key)  
             logger.info(f"Redis Cache: record with {cache_key} invalidated")      
     

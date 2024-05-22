@@ -84,7 +84,7 @@ class PhotosRepository:
         db.commit()
         db.refresh(photo)
         if isinstance(self.query_executor, CacheableQuery):
-            self.query_executor.invalidate_cache_for_all()
+            await self.query_executor.invalidate_cache_for_all()
         return photo
 
 
@@ -98,7 +98,7 @@ class PhotosRepository:
         db.commit()
         db.refresh(photo)
         if isinstance(self.query_executor, CacheableQuery):
-            self.query_executor.invalidate_cache_for_all()
+            await self.query_executor.invalidate_cache_for_all()
         return photo
 
 
@@ -115,8 +115,8 @@ class PhotosRepository:
             db.delete(photo)
             db.commit()
             if isinstance(self.query_executor, CacheableQuery):
-                self.query_executor.invalidate_cache_for_all()
-                self.query_executor.invalidate_cache_for_first(photo_id)
+                await self.query_executor.invalidate_cache_for_all()
+                await self.query_executor.invalidate_cache_for_first(photo_id)
         return photo
 
 
@@ -139,8 +139,8 @@ class PhotosRepository:
         db.add(photo)
         db.commit()
         if isinstance(self.query_executor, CacheableQuery):
-            self.query_executor.invalidate_cache_for_all()
-            self.query_executor.invalidate_cache_for_first(photo_id)
+            await self.query_executor.invalidate_cache_for_all()
+            await self.query_executor.invalidate_cache_for_first(photo_id)
         return photo
 
 
