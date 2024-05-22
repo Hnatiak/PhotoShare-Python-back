@@ -6,4 +6,5 @@ set -o errexit
 pip install poetry
 poetry update
 
+cd app
 alembic upgrade head
