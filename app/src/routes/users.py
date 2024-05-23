@@ -156,8 +156,8 @@ async def get_user(
     response_model=SearchUserResponse,
 )
 async def change_role(
-    user_id: int,
-    body: RoleUpdateSchema,
+    user_id: int,    
+    role: Role,
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
