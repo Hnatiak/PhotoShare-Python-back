@@ -126,6 +126,12 @@ class LinkType(enum.Enum):
     url: str = "URL"
     qr_code: str = "QR Code"
 
+class Operation(enum.Enum):
+    read: str = "READ"
+    write: str = "WRITE"
+    create: str = "CREATE"
+    delete: str = "DELETE" 
+
 class TagBase(BaseModel):
     name: str
 
