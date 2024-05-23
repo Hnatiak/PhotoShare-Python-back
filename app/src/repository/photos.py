@@ -29,8 +29,8 @@ class PhotosRepository:
             return await self.query_executor.get_all(query=query)
         return query.all()
     
-    async def __first(self, id_key, query:Query):
-        if self.query_executor:
+    async def __first(self, id_key, query:Query, disable_caching: bool = False):
+        if not disable_caching and self.query_executor:
             return await self.query_executor.get_first(id_key=id_key, query=query)
         return query.first()
 
@@ -60,7 +60,7 @@ class PhotosRepository:
         return await self.__all(query=query)
 
 
-    async def get_photo(self, photo_id:uuid.UUID, user: User, db: Session) -> Photo:
+    async def get_photo(self, photo_id:uuid.UUID, user: User, db: Session, disable_caching: bool = False) -> Photo:
         """
         Retrieves a single photo by its unique identifier.
 
@@ -72,7 +72,7 @@ class PhotosRepository:
             Photo: A Photo object representing the retrieved photo, or None if no photo is found with the specified ID.
         """
         query = db.query(Photo).filter(Photo.id == photo_id)
-        photo = await self.__first(id_key=photo_id, query=query)    
+        photo = await self.__first(id_key=photo_id, query=query, disable_caching=disable_caching)    
         return photo
 
 
@@ -229,7 +229,7 @@ class PhotosRepository:
         Returns:
             Photo | None: The updated Photo object if successful, or None if the photo wasn't found.
         """
-        if photo:
+        if photo:            
             tags = [tag for tag in body.tags if not any(t.name == tag for t in photo.tags)]    
             if len(photo.tags) + len(tags) > 5:
                 raise IndexError(f"Maximum number of tags per photo is 5, and this photo already has {len(photo.tags)} tags.")    
@@ -237,7 +237,6 @@ class PhotosRepository:
                 photo.description = body.description
             if tags:
                 photo.tags += await self.__ensure_tags(tags=tags, db=db)
-            db.commit()
             db.add(photo)
             db.commit()
             if isinstance(self.query_executor, CacheableQuery):
@@ -246,4 +245,4 @@ class PhotosRepository:
         return photo
 
 
-repository_photos = PhotosRepository(query_executor=CacheableQueryExecutor())
+repository_photos = PhotosRepository(query_executor=CacheableQueryExecutor(ttl=5))
