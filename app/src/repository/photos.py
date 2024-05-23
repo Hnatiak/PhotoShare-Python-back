@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, joinedload, Query
 from src.entity.models import Photo, Tag, User, AssetType
 from datetime import datetime, timedelta
 from src.schemas.schemas import PhotoBase, PhotoResponse, PhotoUpdate
-from src.repository.exceptions import AccessDeniedException
 from src.services.cache import QueryExecutor, CacheableQuery, CacheableQueryExecutor
 
 
@@ -43,7 +42,8 @@ class PhotosRepository:
 
     async def get_photo(self, photo_id:uuid.UUID, user: User, db: Session) -> Photo:
         query = db.query(Photo).filter(Photo.id == photo_id)
-        return await self.__first(id_key=photo_id, query=query)
+        photo = await self.__first(id_key=photo_id, query=query)    
+        return photo
 
 
     def __parse_filter(self, filter: str | None) -> dict:
@@ -102,45 +102,31 @@ class PhotosRepository:
         return photo
 
 
-    async def remove_photo(self, photo_id: uuid.UUID, user: User, db: Session, is_restricted: bool) -> Photo | None:
-        query = db.query(Photo)    
-        query = query.filter(Photo.id == photo_id)
-        photo = await self.__first(id_key=photo_id, query=query)
-        if not photo:
-            return None
-        if is_restricted and photo.user_id != user.id:
-            raise AccessDeniedException    
-        
+    async def remove_photo(self, photo: Photo, user: User, db: Session) -> Photo | None:        
         if photo:
             db.delete(photo)
             db.commit()
             if isinstance(self.query_executor, CacheableQuery):
                 await self.query_executor.invalidate_cache_for_all()
-                await self.query_executor.invalidate_cache_for_first(photo_id)
+                await self.query_executor.invalidate_cache_for_first(photo.id)
         return photo
 
 
-    async def update_photo_details(self, photo_id: uuid.UUID, body: PhotoUpdate, user: User, db: Session, is_restricted: bool) -> Photo | None:
-        query = db.query(Photo)
-        query = query.filter(Photo.id == photo_id)
-        photo = await self.__first(id_key=photo_id, query=query)      
-        if not photo:
-            return None
-        if is_restricted and photo.user_id != user.id:
-            raise AccessDeniedException    
-        db.commit()
-        tags = [tag for tag in body.tags if not any(t.name == tag for t in photo.tags)]    
-        if len(photo.tags) + len(tags) > 5:
-            raise IndexError(f"Maximum number of tags per photo is 5, and this photo already has {len(photo.tags)} tags.")    
-        if body.description:
-            photo.description = body.description
-        if tags:
-            photo.tags += await self.__ensure_tags(tags=tags, db=db)
-        db.add(photo)
-        db.commit()
-        if isinstance(self.query_executor, CacheableQuery):
-            await self.query_executor.invalidate_cache_for_all()
-            await self.query_executor.invalidate_cache_for_first(photo_id)
+    async def update_photo_details(self, photo: Photo, body: PhotoUpdate, user: User, db: Session) -> Photo | None:       
+        if photo:
+            tags = [tag for tag in body.tags if not any(t.name == tag for t in photo.tags)]    
+            if len(photo.tags) + len(tags) > 5:
+                raise IndexError(f"Maximum number of tags per photo is 5, and this photo already has {len(photo.tags)} tags.")    
+            if body.description:
+                photo.description = body.description
+            if tags:
+                photo.tags += await self.__ensure_tags(tags=tags, db=db)
+            db.commit()
+            db.add(photo)
+            db.commit()
+            if isinstance(self.query_executor, CacheableQuery):
+                await self.query_executor.invalidate_cache_for_all()
+                await self.query_executor.invalidate_cache_for_first(photo.id)
         return photo
 
 
