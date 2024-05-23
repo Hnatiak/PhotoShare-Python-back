@@ -1,9 +1,7 @@
 from pathlib import Path
-
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from pydantic import EmailStr
-
 from src.services.auth import auth_service
 from src.conf.config import settings
 
@@ -23,6 +21,20 @@ conf = ConnectionConfig(
 
 
 async def send_email(email: EmailStr, username: str, host: str):
+    """
+    Sends a confirmation email to the provided address.
+
+    This function generates a confirmation email using the configured email template
+    and sends it to the specified recipient address. The email contains a confirmation
+    token generated for the provided email address.
+
+    Args:
+        email (EmailStr): The email address of the recipient.
+        username (str): The username associated with the email address.
+        host (str): The hostname to include in the confirmation link.
+    Raises:
+        ConnectionError: If an error occurs while connecting to the email service.
+    """
     try:
         token_verification = auth_service.create_email_token({"sub": email})
         message = MessageSchema(

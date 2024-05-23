@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated, List
+from typing import List
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
@@ -38,7 +38,25 @@ async def read_photos(keyword: str =  Query(default=None, description="Search ph
                                         access_rule(Operation.read, [Role.user, Role.moderator, Role.admin])
                                     ]
                                 ).authorize)
-                    ):    
+                    ):
+    """
+    Retrieves a list of photos based on provided search criteria.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        keyword: Optional keyword to search photos by description (default: None)
+        tag: Optional tag to search photos by (default: None)
+        skip: Number of records to skip in the response (default: 0)
+        limit: Number of records to include in the response (default: 20, max: 50)
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        List of photo response objects
+    Raises:
+        HTTPException: 403 Forbidden if user lacks permissions to perform read operation
+    """    
     permissions = authorization.check_entity_permissions()
     if not permissions[0]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You don't have permissions for {', '.join(permissions[1])} operation")
@@ -58,6 +76,22 @@ async def read_photo(photo_id: uuid.UUID,
                                     ]
                                 ).authorize)
                     ):
+    """
+    Retrieves a single photo by its unique identifier.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        photo_id: Unique identifier of the photo to retrieve
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        Photo response object
+    Raises:
+        HTTPException: 404 Not Found if photo with specified ID is not found
+        HTTPException: 403 Forbidden if user lacks permissions to perform read operation
+    """
     photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
@@ -78,7 +112,24 @@ async def read_photo(photo_id: uuid.UUID,
                                         access_rule(Operation.read, [Role.user, Role.moderator, Role.admin])
                                     ]
                                 ).authorize)
-                    ):        
+                    ):
+    """
+    Retrieves generated QR code or unique link for photo by its unique identifier.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        photo_id: Unique identifier of the photo to retrieve
+        link_type: Type of link to retrieve (default: qr_code)
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        Photo URL if link_type is LinkType.url, otherwise a StreamingResponse containing QR code image
+    Raises:
+        HTTPException: 404 Not Found if photo with specified ID is not found
+        HTTPException: 403 Forbidden if user lacks permissions to perform read operation
+    """        
     photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
@@ -107,6 +158,25 @@ async def create_photo(file: UploadFile = File(),
                                     ]
                                 ).authorize)
                     ):
+    """
+    Creates a new photo record and uploads the associated image file.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        file: Image file upload (required)
+        description: Description of the photo (default: None, min length 1, max length 500)
+        tags: List of tags associated with the photo (default: [])
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        Photo response object
+    Raises:
+        HTTPException: 400 Bad Request if validation error occurs or photo has already been transformed
+        HTTPException: 403 Forbidden if user lacks permissions to create photos
+    """
+
     photo = None
     try:
         permissions = authorization.check_entity_permissions()
@@ -138,6 +208,24 @@ async def transform_photo(photo_id: uuid.UUID,
                                     ]
                                 ).authorize)
                     ):
+    """
+    Creates a transformed version of an existing photo.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        photo_id: Unique identifier of the photo to transform
+        transformation: Transformation type to apply (default: origin)
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        Photo response object representing the transformed photo
+    Raises:
+        HTTPException: 404 Not Found if photo with specified ID is not found
+        HTTPException: 403 Forbidden if user lacks permissions to perform read or create operation
+        HTTPException: 400 Bad Request if photo has already been transformed
+    """
     photo = None
     try:
         photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
@@ -177,7 +265,23 @@ async def remove_photo(photo_id: uuid.UUID,
                                         access_rule(Operation.delete, [Role.admin])
                                     ]
                                 ).authorize)
-                    ):  
+                    ):
+    """
+    Deletes a photo record and its associations.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        photo_id: Unique identifier of the photo to delete
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        None
+    Raises:
+        HTTPException: 404 Not Found if photo with specified ID is not found
+        HTTPException: 403 Forbidden if user lacks permissions to perform delete operation
+    """  
     photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
@@ -203,6 +307,25 @@ async def update_photo_details(photo_id: uuid.UUID,
                                     ]
                                 ).authorize)
                             ):
+    """
+    Updates the description and tags associated with a photo.
+
+    **Rate Limit:** 10 requests per minute
+
+    Args:
+        photo_id: Unique identifier of the photo to update
+        photo_description: Updated description of the photo (optional)
+        tags: Updated list of tags associated with the photo (default: [])
+        db: Database session dependency
+        current_user: Currently authenticated user dependency
+        authorization: Authorization service dependency
+    Returns:
+        Photo response object reflecting the updated photo details
+    Raises:
+        HTTPException: 404 Not Found if photo with specified ID is not found
+        HTTPException: 403 Forbidden if user lacks permissions to perform read or write operation
+        HTTPException: 400 Bad Request if validation error occurs (e.g. empty tags list)
+    """
     photo = None
     try:
         photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    

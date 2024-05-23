@@ -1,10 +1,8 @@
-import io
 import uuid
 import enum
 from sqlalchemy.orm import relationship, Mapped, mapped_column, backref, declarative_base
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
-# from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import UUID, Column, Integer, LargeBinary, String, Date, Boolean, func
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy import Enum
@@ -71,7 +69,6 @@ class PhotoTag(Base):
 class Photo(Base):
     __tablename__ = "photos"
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
-    # original_id: Mapped[uuid.UUID] = mapped_column(UUID, default=None)
     asset_type = Column(ENUM(AssetType), default='origin', nullable=True)
     created_at = Column("created_at", DateTime, default=func.now(), index=True)
     updated_at = Column("updated_at", DateTime, default=func.now())
