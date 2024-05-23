@@ -1,7 +1,7 @@
 import logging
-from typing import Any, Dict, List
+from typing import List
 
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends
 import uvicorn
 
 from src.entity.models import User, Role

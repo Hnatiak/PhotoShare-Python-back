@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime
 import pickle
 import uuid
 import logging
 import uvicorn.logging
 from redis.asyncio import Redis
-from typing import Hashable, List
-from sqlalchemy import func, and_, or_
-from sqlalchemy.orm import Session, joinedload, Query
+from sqlalchemy.orm import joinedload, Query
 from sqlalchemy.orm.relationships import _RelationshipDeclared, RelationshipProperty
-from src.entity.models import Base
 from src.database.db import redis_client_async
 
 
