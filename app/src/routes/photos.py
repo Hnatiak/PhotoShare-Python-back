@@ -8,7 +8,7 @@ from fastapi_limiter.depends import RateLimiter
 from src.database.db import get_db
 from src.entity.models import User, AssetType, Role
 from src.repository.photos import repository_photos 
-from src.repository import qrcode as repository_qrcode
+from src.repository.qrcode import repository_qrcode
 from src.services.auth import auth_service
 from src.services.photo import CloudPhotoService
 from src.services.qrcode import qrcode_service
@@ -87,7 +87,7 @@ async def read_photo(photo_id: uuid.UUID,
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You don't have permissions for {', '.join(permissions[1])} operation")
     if link_type.name == LinkType.url.name:
         return photo.url
-    qr_code = await repository_qrcode.read_qr_code(photo_id=photo.id, user=current_user, db=db)
+    qr_code = await repository_qrcode.read_qrcode(photo_id=photo.id, user=current_user, db=db)
     if qr_code:
         return StreamingResponse(content=qr_code, media_type="image/png")
     return ""
@@ -118,7 +118,7 @@ async def create_photo(file: UploadFile = File(),
         body = PhotoBase(url=url, description=description, tags=tags[0].split(","))
         photo = await repository_photos.create_photo(body=body, user=current_user, db=db)
         qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
-        await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
+        await repository_qrcode.save_qrcode(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
     except ValidationError as err:
         raise HTTPException(detail=jsonable_encoder(err.errors()), status_code=status.HTTP_400_BAD_REQUEST)    
     return photo
@@ -157,7 +157,7 @@ async def transform_photo(photo_id: uuid.UUID,
                                                               user=current_user,
                                                               db=db)
         qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
-        await repository_qrcode.save_qr_code(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
+        await repository_qrcode.save_qrcode(photo_id=photo.id, qr_code_binary=qr_code_binary, user=current_user, db=db)
     except HTTPException as err:
         raise err
     except Exception as err:

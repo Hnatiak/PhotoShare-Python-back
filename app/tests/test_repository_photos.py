@@ -1,19 +1,13 @@
-import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 from uuid import uuid4
-
-import uuid
-import logging
 from pydantic_core import ValidationError
-import uvicorn.logging
-from typing import List
-from sqlalchemy import func, and_, or_
-from sqlalchemy.orm import Session, joinedload, Query
+from sqlalchemy import func
+from sqlalchemy.orm import Session, Query
 from src.entity.models import Photo, Tag, User, AssetType
 from src.schemas.schemas import PhotoBase, PhotoUpdate
 from src.repository.photos import PhotosRepository
-from src.services.cache import CacheableQueryExecutor, QueryExecutor
+from src.services.cache import CacheableQueryExecutor
 
 
 class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
