@@ -7,7 +7,7 @@ from src.database.db import get_db
 from src.services.auth import auth_service
 from src.services.roles import admin_access, moderator_access, is_owner
 from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
-from src.entity.models import User, Comment, Role
+from src.entity.models import User, Comment
 from src.repository import comments as rep_comments
 
 
@@ -15,7 +15,8 @@ router = APIRouter(prefix='/comments', tags=["comments"])
 
 
 @router.post("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_201_CREATED)
-async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', examples=["user comment"]),
+async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", 
+                                             title='Comment', examples=["user comment"]),
                          photo_id: uuid.UUID = Path(description="ID of photo to comment"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
