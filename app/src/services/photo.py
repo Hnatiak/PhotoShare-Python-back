@@ -4,7 +4,7 @@ from fastapi import UploadFile
 import cloudinary
 import cloudinary.uploader
 from src.conf.config import settings
-from src.entity.models import AssetType
+from src.schemas.schemas import AssetType
 
 
 class CloudPhoto:
@@ -19,9 +19,9 @@ class CloudPhoto:
         'avatar': [
             {'aspect_ratio': '1.0', 'gravity': 'face', 'width': 400, 'zoom': '1', 'crop': 'thumb'},
             {'radius': 'max'},
-            {'color': 'grey', 'effect': 'outline'}
+            {'color': 'blue', 'effect': 'outline'}
         ],
-        'grayscale': [{'effect': 'grayscale'}],
+        'greyscale': [{'effect': 'grayscale'}],
         'delete_bg': [{'effect': 'bgremoval'}],
         'oil_paint': [{'effect': 'oil_paint:100'}],
         'sepia': [{'effect': 'sepia:100'}],

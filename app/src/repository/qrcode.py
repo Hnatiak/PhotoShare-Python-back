@@ -76,4 +76,4 @@ class QRCodeRepository:
         return qr_stream
 
 
-repository_qrcode = QRCodeRepository(query_executor=CacheableQueryExecutor())
+repository_qrcode = QRCodeRepository(query_executor=CacheableQueryExecutor(event_prefixes=["qrcode", "photo"]))

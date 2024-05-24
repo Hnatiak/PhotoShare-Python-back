@@ -169,5 +169,11 @@ class PhotoResponse(PhotoBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PhotoTransform(BaseModel):
-    ...
+
+class AssetType(enum.Enum):
+    avatar: str = 'avatar'
+    greyscale: str = 'greyscale'
+    delete_bg: str = 'delete_bg'
+    oil_paint: str = 'oil_paint'
+    sepia: str = 'sepia'
+    outline: str = 'outline'

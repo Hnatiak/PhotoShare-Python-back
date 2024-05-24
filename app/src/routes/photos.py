@@ -1,12 +1,14 @@
+import logging
 import uuid
-from typing import List
+from typing import Annotated, List
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from fastapi_limiter.depends import RateLimiter
+import uvicorn
 from src.database.db import get_db
-from src.entity.models import User, AssetType, Role
+from src.entity.models import User, Role, AssetType as model_asset_type
 from src.repository.photos import repository_photos 
 from src.repository.qrcode import repository_qrcode
 from src.services.auth import auth_service
@@ -14,11 +16,11 @@ from src.services.photo import CloudPhotoService
 from src.services.qrcode import qrcode_service
 from src.services.authorization import AccessRule as access_rule, Authorization as authorization_service
 from fastapi import APIRouter, Form, HTTPException, Depends, Path, Query, status, UploadFile, File
-from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType, PhotoUpdate
+from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType, PhotoUpdate, Operation, AssetType
 from src.conf.config import settings
-from src.schemas.schemas import Operation
 
 
+logger = logging.getLogger(uvicorn.logging.__name__)
 router = APIRouter(prefix="/photos", tags=["photos"])
 rl_times = settings.rate_limiter_times
 rl_seconds = settings.rate_limiter_seconds
@@ -198,7 +200,7 @@ async def create_photo(file: UploadFile = File(),
     description="No more than 10 requests per minute",
     dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
 async def transform_photo(photo_id: uuid.UUID,
-                        transformation: AssetType = AssetType.origin,
+                        transformation: AssetType = None,                        
                         db: Session = Depends(get_db),
                         current_user: User = Depends(auth_service.get_current_user),
                         authorization: authorization_service = Depends(authorization_service(
@@ -227,6 +229,9 @@ async def transform_photo(photo_id: uuid.UUID,
         HTTPException: 400 Bad Request if photo has already been transformed
     """
     photo = None
+    if not transformation:
+        raise HTTPException(detail="Transformation option is not selected",
+                                status_code=status.HTTP_400_BAD_REQUEST)
     try:
         photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
         if photo is None:
@@ -234,14 +239,15 @@ async def transform_photo(photo_id: uuid.UUID,
         permissions = authorization.check_entity_permissions()
         if not permissions[0]:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You don't have permissions for {', '.join(permissions[1])} operation")
-        if photo.asset_type != AssetType.origin:
+        if photo.asset_type != model_asset_type.origin:
             raise HTTPException(detail="Can't transform because of this photo has already been transformed",
                                 status_code=status.HTTP_400_BAD_REQUEST)
+        asset_type_option = model_asset_type[transformation.name]
         transformated_url = CloudPhotoService.transformate_photo(url=photo.url, asset_type=transformation)
         photo = await repository_photos.create_transformation(url=transformated_url,
                                                               description=photo.description,
                                                               tags=photo.tags,
-                                                              asset_type=transformation,
+                                                              asset_type=asset_type_option,
                                                               user=current_user,
                                                               db=db)
         qr_code_binary = qrcode_service.generate_qrcode(url=photo.url)
@@ -282,7 +288,7 @@ async def remove_photo(photo_id: uuid.UUID,
         HTTPException: 404 Not Found if photo with specified ID is not found
         HTTPException: 403 Forbidden if user lacks permissions to perform delete operation
     """  
-    photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
+    photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db, disable_caching=True)    
     if photo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     permissions = authorization.check_entity_permissions(photo.user)
@@ -328,7 +334,7 @@ async def update_photo_details(photo_id: uuid.UUID,
     """
     photo = None
     try:
-        photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)    
+        photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db, disable_caching=True)    
         if photo is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
         permissions = authorization.check_entity_permissions(photo.user)

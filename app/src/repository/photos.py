@@ -22,15 +22,15 @@ class PhotosRepository:
     for potential caching of queries.
     """
     def __init__(self, query_executor: QueryExecutor = None) -> None:
-        self.query_executor = query_executor
+        self.query_executor = query_executor        
 
     async def __all(self, query:Query):
         if self.query_executor:            
             return await self.query_executor.get_all(query=query)
         return query.all()
     
-    async def __first(self, id_key, query:Query):
-        if self.query_executor:
+    async def __first(self, id_key, query:Query, disable_caching: bool = False):
+        if not disable_caching and self.query_executor:
             return await self.query_executor.get_first(id_key=id_key, query=query)
         return query.first()
 
@@ -55,12 +55,13 @@ class PhotosRepository:
             filters.append(func.lower(Photo.description).like(f"%{keyword.lower()}%"))
         if tag:
             filters.append(Photo.tags.any(func.lower(Tag.name) == tag.lower()))
-        query = query.filter(or_(*filters))
+        if filters:    
+            query = query.filter(or_(False, *filters))
         query = query.offset(skip).limit(limit)
         return await self.__all(query=query)
 
 
-    async def get_photo(self, photo_id:uuid.UUID, user: User, db: Session) -> Photo:
+    async def get_photo(self, photo_id:uuid.UUID, user: User, db: Session, disable_caching: bool = False) -> Photo:
         """
         Retrieves a single photo by its unique identifier.
 
@@ -72,7 +73,7 @@ class PhotosRepository:
             Photo: A Photo object representing the retrieved photo, or None if no photo is found with the specified ID.
         """
         query = db.query(Photo).filter(Photo.id == photo_id)
-        photo = await self.__first(id_key=photo_id, query=query)    
+        photo = await self.__first(id_key=photo_id, query=query, disable_caching=disable_caching)    
         return photo
 
 
@@ -152,8 +153,7 @@ class PhotosRepository:
         db.add(photo)
         db.commit()
         db.refresh(photo)
-        if isinstance(self.query_executor, CacheableQuery):
-            await self.query_executor.invalidate_cache_for_all()
+        await CacheableQuery.trigger(event_prefix="photo", event_name="created")
         return photo
 
 
@@ -183,8 +183,7 @@ class PhotosRepository:
         db.add(photo)
         db.commit()
         db.refresh(photo)
-        if isinstance(self.query_executor, CacheableQuery):
-            await self.query_executor.invalidate_cache_for_all()
+        await CacheableQuery.trigger(event_prefix="photo", event_name="created")
         return photo
 
 
@@ -206,9 +205,7 @@ class PhotosRepository:
         if photo:
             db.delete(photo)
             db.commit()
-            if isinstance(self.query_executor, CacheableQuery):
-                await self.query_executor.invalidate_cache_for_all()
-                await self.query_executor.invalidate_cache_for_first(photo.id)
+            await CacheableQuery.trigger(photo.id, event_prefix="photo", event_name="deleted")
         return photo
 
 
@@ -230,20 +227,18 @@ class PhotosRepository:
             Photo | None: The updated Photo object if successful, or None if the photo wasn't found.
         """
         if photo:
-            tags = [tag for tag in body.tags if not any(t.name == tag for t in photo.tags)]    
+            tags = [tag for tag in body.tags if tag and not any(t.name == tag for t in photo.tags)]    
+            logger.info(tags)
             if len(photo.tags) + len(tags) > 5:
                 raise IndexError(f"Maximum number of tags per photo is 5, and this photo already has {len(photo.tags)} tags.")    
             if body.description:
                 photo.description = body.description
             if tags:
                 photo.tags += await self.__ensure_tags(tags=tags, db=db)
-            db.commit()
             db.add(photo)
             db.commit()
-            if isinstance(self.query_executor, CacheableQuery):
-                await self.query_executor.invalidate_cache_for_all()
-                await self.query_executor.invalidate_cache_for_first(photo.id)
+            await CacheableQuery.trigger(photo.id, event_prefix="photo", event_name="updated")
         return photo
 
 
-repository_photos = PhotosRepository(query_executor=CacheableQueryExecutor())
+repository_photos = PhotosRepository(query_executor=CacheableQueryExecutor(event_prefixes=["photo", "comment", "user"]))
