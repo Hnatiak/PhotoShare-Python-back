@@ -109,7 +109,12 @@ async def update_avatar(
     response_model=List[SearchUserResponse],
     # dependencies=[Depends(allowed_get_all_users)],
 )
-async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+async def read_all_users(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    cur_user: User = Depends(auth_service.get_current_user),
+):
     """
     The read_all_users function returns a list of users.
     Args:
@@ -120,6 +125,12 @@ async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(g
     Returns:
 
     """
+    if cur_user.role != Role.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to get users",
+        )
+
     users = await repositories_users.get_users(skip, limit, db)
     return users
 
@@ -189,14 +200,13 @@ async def change_role(
 async def change_ban(
     user_id: int,    
     isbanned: Isbanned,
-    # isbanned: bool = Query(None),
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
     if cur_user.role != Role.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission banned user",
+            detail="You do not have permission to block the user",
         )
     body = BanUpdateSchema(isbanned=isbanned)
     user = await repositories_users.change_ban(user_id, body, db)
