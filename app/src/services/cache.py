@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import pickle
+from typing import Callable
 import uuid
 import logging
 import uvicorn.logging
@@ -28,18 +29,72 @@ class QueryExecutor (ABC):
     async def get_scalar(self, id_key, query: Query):
         pass
 
+
 class CacheableQuery(ABC):
+    callbacks: dict[str, set[tuple[object, Callable]]] = {}
+    __events_mapping: dict[str, set[Callable]] = {"created": set(), "updated": set(), "deleted": set()}
+    __event_prefixes: set[str] = set()
+
+    @classmethod
+    def get_event_prefixes(cls) -> set[str]:
+        return cls.__event_prefixes
+    
+    @classmethod
+    def get_event_names(cls) -> list[str]:
+        return cls.__events_mapping.keys()
+    
+    @classmethod
+    def iter_event_mappings(cls, event_name: str):
+        if event_name in cls.__events_mapping.keys():
+            for func in cls.__events_mapping[event_name]:
+                yield func
+    
+    @classmethod
+    def map_handler_to_event_name(cls, event_name: str, handler: Callable):
+        if event_name in cls.__events_mapping.keys():
+            cls.__events_mapping[event_name].add(handler)
+
+    @classmethod
+    def add_event_prefix(cls, prefix: str):
+        cls.__event_prefixes.add(prefix)
+    
+    @classmethod
+    def get_event(cls, event_prefix: str, event_name: str):
+        if event_prefix in cls.__event_prefixes and event_name in cls.__events_mapping.keys():
+            return f"{event_prefix}:{event_name}"
+
+    @classmethod
+    def on(cls, event_prefix: str, event_name: str, callback: Callable, inst):        
+        if event_prefix in cls.__event_prefixes and event_name in cls.__events_mapping.keys():   
+            event = cls.get_event(event_prefix=event_prefix, event_name=event_name)         
+            if event not in cls.callbacks:
+                cls.callbacks[event] = {(inst,callback),}
+            else:
+                cls.callbacks[event].add((inst,callback))
+
+    @classmethod
+    async def trigger(cls, *args, event_prefix: str, event_name: str, **kwargs):
+        if cls.callbacks is not None and event_prefix in cls.__event_prefixes and event_name in cls.__events_mapping.keys():
+            event = cls.get_event(event_prefix=event_prefix, event_name=event_name)
+            if event in cls.callbacks.keys():
+                for inst, callback in cls.callbacks[event]:
+                    try:
+                        await callback(inst, *args, **kwargs)
+                    except Exception as err:
+                        logger.error(msg=f"Handler '{callback.__class__.__name__}.{callback.__name__}' for the event '{event}' failed with error:\n{err.args[0]}")
+
     @abstractmethod
-    async def invalidate_cache_for_all(self):
+    async def invalidate_cache_for_all(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    async def invalidate_cache_for_first(self, id_key):
+    async def invalidate_cache_for_first(self, id_key, *args, **kwargs):
         pass
     
     @abstractmethod
-    async def invalidate_cache_for_scalar(self, id_key):
+    async def invalidate_cache_for_scalar(self, id_key, *args, **kwargs):
         pass
+
 
 class CacheableQueryExecutor(QueryExecutor, CacheableQuery):
     """
@@ -49,13 +104,34 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery):
     for fetching data from a database and invalidating corresponding cache entries
     using an asynchronous Redis client.
     """
-    def __init__(self, ttl: int = None) -> None:
+
+    def __init__(self, event_prefixes: list[str], ttl: int = None) -> None:
+        self.event_prefixes = event_prefixes
         self.client = redis_client_async
         self.ttl = ttl or 15*60
         self.prefix = id(self)
         self.all_prefix = f"{self.prefix}_all_"
         self.first_prefix = f"{self.prefix}_first_"
-        self.scalar_prefix = f"{self.prefix}_scalar_"
+        self.scalar_prefix = f"{self.prefix}_scalar_"  
+        self.__init_events()  
+
+    def __init_events(self):           
+        for event_prefix in self.event_prefixes:         
+            CacheableQuery.add_event_prefix(event_prefix) 
+            for event_name in CacheableQuery.get_event_names():
+                for func in CacheableQuery.iter_event_mappings(event_name=event_name):
+                    CacheableQuery.on(event_prefix=event_prefix, event_name=event_name, callback=func, inst=self)    
+            
+
+    def __events(event_names:list[str]):        
+        def inner(func):
+            for event_name in event_names:
+                CacheableQuery.map_handler_to_event_name(event_name=event_name, handler=func)
+            async def event_wrapper(self, *args, **kwargs):
+                await func(self, *args, **kwargs)
+            return event_wrapper
+        return inner
+
 
     @classmethod
     def __get_cache_key(cls, prefix, key):
@@ -205,8 +281,9 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery):
             return value            
         except ArgsUnhashable:
             return await self.__get_scalar(query=query)   
-        
-    async def invalidate_cache_for_all(self):
+
+    @__events(["created", "updated", "deleted"])    
+    async def invalidate_cache_for_all(self, *args):
         """
         Invalidates all cached entries generated by `get_all`.
 
@@ -221,7 +298,8 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery):
                 await self.client.delete(cache_key)
                 logger.info(f"Redis Cache: record with {cache_key} invalidated")
 
-    async def invalidate_cache_for_first(self, id_key):
+    @__events(["created", "updated", "deleted"])    
+    async def invalidate_cache_for_first(self, id_key, *args):
         """Invalidates the cached entry generated by `get_first` for the provided ID.
 
         This method generates a cache key based on the provided ID and the prefix
@@ -235,7 +313,8 @@ class CacheableQueryExecutor(QueryExecutor, CacheableQuery):
             await self.client.delete(cache_key)  
             logger.info(f"Redis Cache: record with {cache_key} invalidated")      
     
-    async def invalidate_cache_for_scalar(self, id_key):
+    @__events(["updated", "deleted"]) 
+    async def invalidate_cache_for_scalar(self, id_key, *args):
         """Invalidates the cached entry generated by `get_scalar` for the provided ID.
 
         This method generates a cache key based on the provided ID and the prefix
