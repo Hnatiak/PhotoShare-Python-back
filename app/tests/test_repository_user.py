@@ -1,9 +1,11 @@
 import unittest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, Mock, AsyncMock
 
 from datetime import date
 
-from sqlalchemy.ext.asyncio import AsyncSession
+# from typing import List
+
+from sqlalchemy.orm import Session
 
 from src.entity.models import User
 from src.schemas.schemas import UserSchema, UserResponse, UserUpdateSchema, RoleUpdateSchema
@@ -18,37 +20,64 @@ from src.repository.users import (
 )
 
 
-class TestAsyncContacts(unittest.IsolatedAsyncioTestCase):
+class TestAsyncUsers(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.user = User(
             id=1,
-            name="Test Name",
+            username="Test Name",
             email="testemail@ukr.net",
             phone="0674444444",
             birthday=date(1975, 12, 12),
             password="123qweas",
         )
-        # self.contact = Contact(id=1, email="testemail@ukr.net")
-        self.session = AsyncMock(spec=AsyncSession)
+        self.user2 = User(
+            id=2,
+            username="Test Name2",
+            email="testemail2@ukr.net",
+            phone="0674444442",
+            birthday=date(1975, 12, 12),
+            password="123qwea2",
+        )
+        self.session = Mock(spec=Session)
         print("Start Test")
 
+
     async def test_get_user_by_email(self):
-        user = User()
-        mocked_user = MagicMock()
-        mocked_user.scalar_one_or_none.return_value = user
-        self.session.execute.return_value = mocked_user
+        query_mock = Mock()
+        query_mock.filter.return_value.first.return_value = self.user
+        self.session.query.return_value = query_mock
+
         result = await get_user_by_email(email=self.user.email, db=self.session)
-        self.assertEqual(result, user)
+
+        self.assertIsInstance(result, User)
+        self.assertEqual(result.username, self.user.username)
+        self.assertEqual(result.email, self.user.email)
+
+
+    async def test_get_users(self):
+        query_mock = Mock()
+        query_mock.offset.return_value.limit.return_value.all.return_value = [self.user, self.user2]
+        self.session.query.return_value = query_mock
+
+        result = await get_users(skip=0, limit=10, db=self.session)
+        self.assertIsInstance(result, list)
+        for item in result:
+            self.assertIsInstance(item, User)  
+
 
     async def test_get_user_by_id(self):
-        user = User()
-        mocked_user = MagicMock()
-        mocked_user.scalar_one_or_none.return_value = user
-        self.session.execute.return_value = mocked_user
-        result = await get_user_by_id(email=self.user.id, db=self.session)
-        self.assertEqual(result, user)
+        query_mock = Mock()
+        query_mock.filter.return_value.first.return_value = self.user
+        self.session.query.return_value = query_mock
 
+        result = await get_user_by_id(user_id=self.user.id, db=self.session)
+
+        self.assertIsInstance(result, User)
+        self.assertEqual(result.id, self.user.id)
+
+ 
+ 
     async def test_create_user(self):
         body = UserSchema(
             username="test_name",
@@ -68,13 +97,13 @@ class TestAsyncContacts(unittest.IsolatedAsyncioTestCase):
         mocked_user = MagicMock()
         mocked_user.scalar_one_or_none.return_value = user
         self.session.execute.return_value = mocked_user
-        result = await change_role(uyser_id=self.id, body=body, db=self.session)
+        result = await change_role(user_id=self.id, body=body, db=self.session)
         self.session.commit.assert_called_once()
         self.session.refresh.assert_called_once()
         self.assertIsInstance(result, User)
         self.assertEqual(result.role, body.role)
 
-    async def test_update_contact(self):
+    async def test_update_user(self):
         user = User()
         body = UserUpdateSchema(
             username="test_name",
@@ -84,7 +113,7 @@ class TestAsyncContacts(unittest.IsolatedAsyncioTestCase):
         mocked_user = MagicMock()
         mocked_user.scalar_one_or_none.return_value = user
         self.session.execute.return_value = mocked_user
-        result = await update_user(uyser_id=self.id, body=body, db=self.session)
+        result = await update_user(user_id=self.id, body=body, db=self.session)
         self.session.commit.assert_called_once()
         self.session.refresh.assert_called_once()
         self.assertIsInstance(result, User)
@@ -93,25 +122,15 @@ class TestAsyncContacts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.birthday, body.birthday)
 
     async def test_update_avatar(self):
-        user = User()
         url = "https://www.gravatar.com/avatar/64cd6c93150a4ead4d329f7f949715fc"
-        mocked_user = MagicMock()
-        mocked_user.scalar_one_or_none.return_value = user
-        self.session.execute.return_value = mocked_user
+        query_mock = Mock()
+        query_mock.filter.return_value.first.return_value = self.user
+        self.session.query.return_value = query_mock
         result = await update_avatar(email=self.user.email, url=url, db=self.session)
         self.session.commit.assert_called_once()
         self.session.refresh.assert_called_once()
         self.assertIsInstance(result, User)
         self.assertEqual(result.avatar, url)
-
-    async def test_get_users(self):
-        users = [User(), User(), User()]
-        mocked_user = MagicMock()
-        mocked_user.scalars.return_value.all.return_value = users
-        self.session.execute.return_value = mocked_user
-        result = await get_users(offset=0, limit=10, db=self.session)
-        self.assertEqual(result, users)
-
 
     def tearDown(self):
         print("End Test")
