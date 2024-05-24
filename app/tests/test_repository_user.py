@@ -1,14 +1,11 @@
 import unittest
-from unittest.mock import MagicMock, Mock, AsyncMock
-
+from unittest.mock import Mock
 from datetime import date
-
-# from typing import List
 
 from sqlalchemy.orm import Session
 
 from src.entity.models import User
-from src.schemas.schemas import UserSchema, UserResponse, UserUpdateSchema, RoleUpdateSchema
+from src.schemas.schemas import UserSchema, UserUpdateSchema, RoleUpdateSchema
 from src.repository.users import (
     get_user_by_email,
     get_user_by_id,
@@ -21,7 +18,6 @@ from src.repository.users import (
 
 
 class TestAsyncUsers(unittest.IsolatedAsyncioTestCase):
-
     def setUp(self):
         self.user = User(
             id=1,
@@ -42,42 +38,32 @@ class TestAsyncUsers(unittest.IsolatedAsyncioTestCase):
         self.session = Mock(spec=Session)
         print("Start Test")
 
-
     async def test_get_user_by_email(self):
         query_mock = Mock()
         query_mock.filter.return_value.first.return_value = self.user
         self.session.query.return_value = query_mock
-
         result = await get_user_by_email(email=self.user.email, db=self.session)
-
         self.assertIsInstance(result, User)
         self.assertEqual(result.username, self.user.username)
         self.assertEqual(result.email, self.user.email)
-
 
     async def test_get_users(self):
         query_mock = Mock()
         query_mock.offset.return_value.limit.return_value.all.return_value = [self.user, self.user2]
         self.session.query.return_value = query_mock
-
         result = await get_users(skip=0, limit=10, db=self.session)
         self.assertIsInstance(result, list)
         for item in result:
             self.assertIsInstance(item, User)  
 
-
     async def test_get_user_by_id(self):
         query_mock = Mock()
         query_mock.filter.return_value.first.return_value = self.user
         self.session.query.return_value = query_mock
-
         result = await get_user_by_id(user_id=self.user.id, db=self.session)
-
         self.assertIsInstance(result, User)
         self.assertEqual(result.id, self.user.id)
 
- 
- 
     async def test_create_user(self):
         body = UserSchema(
             username="test_name",
@@ -94,7 +80,7 @@ class TestAsyncUsers(unittest.IsolatedAsyncioTestCase):
         body = RoleUpdateSchema(
             role="moderator"
         )
-        mocked_user = MagicMock()
+        mocked_user = Mock()
         mocked_user.scalar_one_or_none.return_value = user
         self.session.execute.return_value = mocked_user
         result = await change_role(user_id=self.id, body=body, db=self.session)
@@ -110,7 +96,7 @@ class TestAsyncUsers(unittest.IsolatedAsyncioTestCase):
             phone="0674444444",
             birthday=date(1975, 12, 12),
         )
-        mocked_user = MagicMock()
+        mocked_user = Mock()
         mocked_user.scalar_one_or_none.return_value = user
         self.session.execute.return_value = mocked_user
         result = await update_user(user_id=self.id, body=body, db=self.session)
