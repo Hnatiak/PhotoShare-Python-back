@@ -55,6 +55,10 @@ async def change_ban(user_id: int, body: BanUpdateSchema, db: Session):
     user = result.scalar_one_or_none()
     if user is None:
         return None
+    # if body.isbanned == "true":
+    #     user.isbanned = True
+    # else:
+    #     user.isbanned = False
     user.isbanned = body.isbanned
     db.commit()
     db.refresh(user)

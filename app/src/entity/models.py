@@ -15,8 +15,8 @@ class Role(enum.Enum):
     user: str = "user"
 
 class Isbanned(enum.Enum):
-    bun_on: bool = True
-    bun_off: bool = False
+    ban_on: str = True
+    ban_off: bool = False
 
 class AssetType(enum.Enum):
     origin: str = 'origin'
@@ -41,7 +41,8 @@ class User(Base):
     refresh_token = Column(String(255), nullable=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     role = Column('role', Enum(Role), default=Role.user)
-    isbanned = Column(Boolean, default=False)
+    isbanned = Column('isbanned', Enum(Isbanned), default=Isbanned.ban_off)
+    # isbanned = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)
 
 
