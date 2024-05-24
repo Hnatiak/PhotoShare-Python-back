@@ -4,7 +4,7 @@ from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
 # from pydantic_extra_types.phone_numbers import PhoneNumber
-from src.entity.models import Role, AssetType
+from src.entity.models import Isbanned, Role, AssetType
 from datetime import date
 
 
@@ -34,6 +34,8 @@ class TokenSchema(BaseModel):
 class RoleUpdateSchema(BaseModel):
     role: Role
 
+class BanUpdateSchema(BaseModel):
+    isbanned: Isbanned
 
 class UserDb(BaseModel):
     id: int = 1

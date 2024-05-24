@@ -15,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlalchemy.orm import Session
 
-from src.entity.models import User, Role
+from src.entity.models import User, Role, Isbanned
 
-from src.schemas.schemas import UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema, SearchUserResponse, AssetType
+from src.schemas.schemas import BanUpdateSchema, UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema, SearchUserResponse, AssetType
 from src.services.auth import auth_service
 from src.services.photo import CloudPhotoService
 
@@ -176,6 +176,29 @@ async def change_role(
         )
     body = RoleUpdateSchema(role=role)
     user = await repositories_users.change_role(user_id, body, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return user
+
+@router.put(
+    "/ban/{user_id}",
+    response_model=SearchUserResponse,
+)
+async def change_ban(
+    user_id: int,    
+    isbanned: Isbanned,
+    db: AsyncSession = Depends(get_db),
+    cur_user: User = Depends(auth_service.get_current_user),
+):
+    if cur_user.role != Role.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission banned user",
+        )
+    body = BanUpdateSchema(isbanned=isbanned)
+    user = await repositories_users.change_ban(user_id, body, db)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"

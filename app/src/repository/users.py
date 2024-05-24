@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 from src.entity.models import User
-from src.schemas.schemas import UserSchema, UserUpdateSchema, RoleUpdateSchema
+from src.schemas.schemas import UserSchema, UserUpdateSchema, RoleUpdateSchema, BanUpdateSchema
 import redis.asyncio as redis
 from sqlalchemy.future import select
 
@@ -45,6 +45,17 @@ async def change_role(user_id: int, body: RoleUpdateSchema, db: Session):
     if user is None:
         return None
     user.role = body.role
+    db.commit()
+    db.refresh(user)
+    return user
+
+async def change_ban(user_id: int, body: BanUpdateSchema, db: Session):
+    stmt = select(User).filter_by(id=user_id)
+    result = db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if user is None:
+        return None
+    user.isbanned = body.isbanned
     db.commit()
     db.refresh(user)
     return user
