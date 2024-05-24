@@ -15,7 +15,6 @@ from time import time
 from asyncio import sleep
 
 
-
 async def get_user_by_email(email: str, db: Session) -> User:
     return db.query(User).filter(User.email == email).first()
 
@@ -55,11 +54,12 @@ async def change_ban(user_id: int, body: BanUpdateSchema, db: Session):
     user = result.scalar_one_or_none()
     if user is None:
         return None
-    # if body.isbanned == "true":
-    #     user.isbanned = True
-    # else:
-    #     user.isbanned = False
-    user.isbanned = body.isbanned
+    if body.isbanned == "banned":
+        user.isbanned = True
+    elif body.isbanned == "unbanned":
+        user.isbanned = False
+    else:
+        return None
     db.commit()
     db.refresh(user)
     return user
@@ -116,7 +116,6 @@ async def update_token(user: User, token: str | None, db: Session) -> None:
 #     return user
 
 
-
 BLACKLISTED_TOKENS = "blacklisted_tokens"
 
 r = redis.Redis(
@@ -150,4 +149,3 @@ async def dell_from_bleck_list(expired, token: str, db: AsyncSession) -> None:
     await sleep(time_for_sleep)
     db.delete(bl_token)
     db.commit()
-

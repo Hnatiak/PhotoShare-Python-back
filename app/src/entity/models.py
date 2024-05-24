@@ -14,9 +14,15 @@ class Role(enum.Enum):
     moderator: str = "moderator"
     user: str = "user"
 
-class Isbanned(enum.Enum):
-    banned: str = "banned"
-    unbanned: str = "unbanned"
+# class Isbanned(enum.Enum):
+#     banned: str = "banned"
+#     unbanned: str = "unbanned"
+
+
+class Isbanned(str, enum.Enum):
+    banned = "banned"
+    unbanned = "unbanned"
+
 
 class AssetType(enum.Enum):
     origin: str = 'origin'

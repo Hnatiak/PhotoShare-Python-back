@@ -188,8 +188,8 @@ async def change_role(
 )
 async def change_ban(
     user_id: int,    
-    # isbanned: Isbanned,
-    isbanned: bool = Query(None),
+    isbanned: Isbanned,
+    # isbanned: bool = Query(None),
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
