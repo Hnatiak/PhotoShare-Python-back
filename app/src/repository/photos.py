@@ -153,7 +153,7 @@ class PhotosRepository:
         db.add(photo)
         db.commit()
         db.refresh(photo)
-        await CacheableQuery.trigger(event_prefix="photo", event_name="created")
+        await CacheableQuery.trigger(photo.id, event_prefix="photo", event_name="created")
         return photo
 
 
@@ -183,7 +183,7 @@ class PhotosRepository:
         db.add(photo)
         db.commit()
         db.refresh(photo)
-        await CacheableQuery.trigger(event_prefix="photo", event_name="created")
+        await CacheableQuery.trigger(photo.id, event_prefix="photo", event_name="created")
         return photo
 
 
