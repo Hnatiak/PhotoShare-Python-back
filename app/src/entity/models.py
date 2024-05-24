@@ -14,6 +14,16 @@ class Role(enum.Enum):
     moderator: str = "moderator"
     user: str = "user"
 
+# class Isbanned(enum.Enum):
+#     banned: str = "banned"
+#     unbanned: str = "unbanned"
+
+
+class Isbanned(str, enum.Enum):
+    banned = "banned"
+    unbanned = "unbanned"
+
+
 class AssetType(enum.Enum):
     origin: str = 'origin'
     avatar: str = 'avatar'
@@ -37,7 +47,7 @@ class User(Base):
     refresh_token = Column(String(255), nullable=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     role = Column('role', Enum(Role), default=Role.user)
-    isLoggedIn = Column(Boolean, default=False)
+    isbanned = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)
 
 
