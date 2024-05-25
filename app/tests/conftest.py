@@ -1,7 +1,5 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from main import app
 from src.entity.models import Base
@@ -10,23 +8,21 @@ from tests.mock_db import MockDB, USERS, PHOTOS
 
 
 @pytest.fixture(scope="module")
-def session():
+def init_db():
     # Create the database
 
     Mock_db = MockDB(users=USERS, photos=PHOTOS)
-    local_session = Mock_db()
-    
-    try:
-        yield local_session
-    finally:
-        local_session.close()
-
+    # local_session = Mock_db()
+    # return local_session
+    return Mock_db    
 
 @pytest.fixture(scope="module")
-def client(session):
+def client():
     # Dependency override
+    Mock_db = MockDB(users=USERS, photos=PHOTOS)
 
     def override_get_db():
+        session = Mock_db()
         try:
             yield session
         finally:
@@ -37,6 +33,15 @@ def client(session):
     yield TestClient(app)
 
 
-# @pytest.fixture(scope="module")
-# def user():
-#     return {"username": "deadpool", "email": "deadpool@example.com", "password": "123456789"}
+@pytest.fixture(scope='module')
+def new_user():
+    return {'username': 'new_test_user', 'email': 'user@test.com', 'password': 'secret78'}
+
+# @pytest.fixture(scope='function')
+# def mock_redis(monkeypatch):
+#     monkeypatch.setattr(
+#         "fastapi_limiter.FastAPILimiter.redis", AsyncMock())
+#     monkeypatch.setattr(
+#         "fastapi_limiter.FastAPILimiter.identifier", AsyncMock())
+#     monkeypatch.setattr(
+#         "fastapi_limiter.FastAPILimiter.http_callback", AsyncMock())

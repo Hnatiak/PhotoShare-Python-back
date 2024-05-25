@@ -15,7 +15,7 @@ from src.services.qrcode import qrcode_service
 from fastapi import APIRouter, Form, HTTPException, Depends, Path, Query, status, UploadFile, File
 from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType, PhotoUpdate
 from src.conf.config import settings
-from src.repository.exceptions import AccessDeniedException
+from src.exceptions.exceptions import AccessDeniedException
 
 
 router = APIRouter(prefix="/photos", tags=["photos"])

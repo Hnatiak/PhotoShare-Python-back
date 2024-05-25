@@ -62,7 +62,7 @@ async def edit_comment(comment: str = Body(min_length=1, max_length=500, descrip
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Record ID not found")
 
-    current_user_is_owner = is_owner(current_user=current_user, item_owner_id=record.user_id)
+    current_user_is_owner = await is_owner(current_user=current_user, item_owner_id=record.user_id)
     # if (current_user.role not in moderator_access.allowed_roles) and (author.id != current_user.id):
     if (current_user.role not in moderator_access.allowed_roles) and not current_user_is_owner:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,

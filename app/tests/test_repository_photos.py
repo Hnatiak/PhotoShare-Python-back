@@ -12,7 +12,7 @@ from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import Session, joinedload, Query
 from src.entity.models import Photo, Tag, User, AssetType
 from src.schemas.schemas import PhotoBase, PhotoUpdate
-from src.repository.exceptions import AccessDeniedException
+from app.src.exceptions.exceptions import AccessDeniedException
 from src.repository.photos import PhotosRepository
 from src.services.cache import CacheableQueryExecutor, QueryExecutor
 
