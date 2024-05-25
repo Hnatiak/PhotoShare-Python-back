@@ -132,6 +132,8 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=RETURN_MSG.email_invalid)
     if not user.confirmed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=RETURN_MSG.email_not_confirmed)
+    if user.isbanned:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is banned")
     if not auth_service.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=RETURN_MSG.password_invalid)
     # Generate JWT
@@ -202,13 +204,10 @@ async def logout(
     try:
         token = credentials.credentials
         await repository_users.add_to_blacklist(token, db)
-
         user.refresh_token = None
         db.commit()
-        #########################
         expired = await auth_service.get_exp_from_token(token)
         background_tasks.add_task(repository_users.dell_from_bleck_list, expired, token, db)
-        #########################
         return {"logout": RETURN_MSG.user_logout}
     except:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=RETURN_MSG.user_logout)

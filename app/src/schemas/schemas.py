@@ -4,7 +4,7 @@ from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
 # from pydantic_extra_types.phone_numbers import PhoneNumber
-from src.entity.models import Role, AssetType
+from src.entity.models import Isbanned, Role, AssetType
 from datetime import date
 
 
@@ -34,6 +34,8 @@ class TokenSchema(BaseModel):
 class RoleUpdateSchema(BaseModel):
     role: Role
 
+class BanUpdateSchema(BaseModel):
+    isbanned: Isbanned
 
 class UserDb(BaseModel):
     id: int = 1
@@ -126,6 +128,12 @@ class LinkType(enum.Enum):
     url: str = "URL"
     qr_code: str = "QR Code"
 
+class Operation(enum.Enum):
+    read: str = "READ"
+    write: str = "WRITE"
+    create: str = "CREATE"
+    delete: str = "DELETE" 
+
 class TagBase(BaseModel):
     name: str
 
@@ -163,5 +171,11 @@ class PhotoResponse(PhotoBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PhotoTransform(BaseModel):
-    ...
+
+class AssetType(enum.Enum):
+    avatar: str = 'avatar'
+    greyscale: str = 'greyscale'
+    delete_bg: str = 'delete_bg'
+    oil_paint: str = 'oil_paint'
+    sepia: str = 'sepia'
+    outline: str = 'outline'

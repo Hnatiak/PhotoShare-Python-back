@@ -6,6 +6,7 @@ from sqlalchemy import select, text, func
 
 from src.entity.models import Comment, User, Photo
 from src.schemas.schemas import CommentNewSchema
+from src.services.cache import CacheableQuery
 
 
 async def create_comment(user: User, body: CommentNewSchema, db: Session) -> Comment | None:
@@ -26,6 +27,7 @@ async def create_comment(user: User, body: CommentNewSchema, db: Session) -> Com
     db.commit()
     # comment = await db.refresh(comment)
     db.refresh(comment)
+    await CacheableQuery.trigger(comment.photo_id, event_prefix="comment", event_name="created")
     return comment
 
 
@@ -51,6 +53,7 @@ async def edit_comment(record_id: int, comment: str, db: Session) -> Comment | N
         # await db.refresh(result)
         db.commit()
         db.refresh(result)
+        await CacheableQuery.trigger(result.photo_id, event_prefix="comment", event_name="updated")
     return result
 
 
@@ -150,7 +153,7 @@ async def delete_comment(record_id: int, db: Session) -> Comment|None:
         # await db.commit()
         db.delete(result)
         db.commit()
-
+        await CacheableQuery.trigger(result.photo_id, event_prefix="comment", event_name="deleted")
     return result
 
 
