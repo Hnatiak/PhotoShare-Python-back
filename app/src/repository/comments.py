@@ -6,6 +6,7 @@ from sqlalchemy import select, text, func
 
 from src.entity.models import Comment, User, Photo
 from src.schemas.schemas import CommentNewSchema
+from src.services.cache import CacheableQuery
 
 
 async def create_comment(user: User, body: CommentNewSchema, db: Session) -> Comment | None:
@@ -26,33 +27,54 @@ async def create_comment(user: User, body: CommentNewSchema, db: Session) -> Com
     db.commit()
     # comment = await db.refresh(comment)
     db.refresh(comment)
+    await CacheableQuery.trigger(comment.photo_id, event_prefix="comment", event_name="created")
     return comment
 
 
-async def edit_comment(record_id: int, body: CommentNewSchema, db: Session) -> Comment | None:
+async def edit_comment(record_id: int, comment: str, db: Session) -> Comment | None:
     '''
     Updates specific comment by ID.
 
     Args:    
         record_id: ID of record to change
-        body: updated data of the comment record
+        comment: updated comment text
         db: sync db session
     Returns:
         obj: 'Comment' | None: Comment with ID or None.
     '''
-    stmt = select(Comment).filter_by(id=record_id, photo_id=body.photo_id)
+    stmt = select(Comment).filter_by(id=record_id)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
     result = result.unique().scalar_one_or_none()
     if result:
-        result.text = body.text
+        result.text = comment
         # result.updated_at = func.now() # has defaut value in Model
         # await db.commit()
         # await db.refresh(result)
         db.commit()
         db.refresh(result)
+        await CacheableQuery.trigger(result.photo_id, event_prefix="comment", event_name="updated")
     return result
 
+
+# async def update_comment(record: Comment, comment: str, db: Session) -> Comment | None:
+#     '''
+#     Updates specific comment by ID.
+
+#     Args:    
+#         record_id: ID of record to change
+#         body: updated data of the comment record
+#         db: sync db session
+#     Returns:
+#         obj: 'Comment' | None: Comment with ID or None.
+#     '''
+#     record.text = comment
+#     # result.updated_at = func.now() # has defaut value in Model
+#     # await db.commit()
+#     # await db.refresh(result)
+#     db.commit(record)
+#     result = db.refresh(record)
+#     return result
 
 async def get_comments_by_user_id(user_id: int, offset: int, limit: int, db: Session) -> list[Comment]:
     '''
@@ -112,7 +134,7 @@ async def get_comments_by_user_and_photo_ids(user_id: int, photo_id: uuid.UUID, 
     return result.unique().scalars().all()
 
 
-async def delete_comment(record_id: int, db: Session) -> None:
+async def delete_comment(record_id: int, db: Session) -> Comment|None:
     '''
     Deletes comment by ID.
 
@@ -120,7 +142,7 @@ async def delete_comment(record_id: int, db: Session) -> None:
         record_id: ID of record to delete
         db: sync db session
     Returns:
-        None
+        obj: Comment | None: Record, that was deleted
     '''
     stmt = select(Comment).filter_by(id=record_id)
     # result = await db.execute(stmt)
@@ -131,26 +153,45 @@ async def delete_comment(record_id: int, db: Session) -> None:
         # await db.commit()
         db.delete(result)
         db.commit()
-
+        await CacheableQuery.trigger(result.photo_id, event_prefix="comment", event_name="deleted")
     return result
 
 
-async def get_author_by_comment_id(rec_id: int, db: Session) -> User | None:
+# async def get_author_by_comment_id(rec_id: int, db: Session) -> User|None:
+#     '''
+#     Retrieves comment author by record ID.
+    
+#     Args:
+#         rec_id: The ID of comment record.
+#         db: sync db session
+#     Returns:
+#         obj: 'User': Author of comments.
+#     '''
+#     stmt = select(Comment).filter_by(id=rec_id)
+#     # result = await db.execute(stmt)
+#     result = db.execute(stmt)
+#     # result = result.scalar_one_or_none()
+#     result = result.unique().scalar_one_or_none()
+#     if result:
+#         result = result.user
+
+#     return result
+
+
+async def get_comment_by_id(rec_id: int, db: Session) -> Comment|None:
     '''
-    Retrieves comment author by record ID.
+    Retrieves comment by record ID.
     
     Args:
         rec_id: The ID of comment record.
         db: sync db session
     Returns:
-        obj: 'User': Author of comments.
+        obj: 'Comment' | None: Comment.
     '''
     stmt = select(Comment).filter_by(id=rec_id)
     # result = await db.execute(stmt)
     result = db.execute(stmt)
-    # result = result.scalar_one_or_none()
+
     result = result.unique().scalar_one_or_none()
-    if result:
-        result = result.user
 
     return result

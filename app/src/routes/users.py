@@ -15,17 +15,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlalchemy.orm import Session
 
-from src.entity.models import User, Role
+from src.entity.models import User, Role, Isbanned
 
-from src.schemas.schemas import UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema, SearchUserResponse
+from src.schemas.schemas import BanUpdateSchema, UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema, SearchUserResponse, AssetType
 from src.services.auth import auth_service
+from src.services.photo import CloudPhotoService
 
 from src.repository import users as repositories_users
 from src.database.db import get_db
 from src.services.roles import RoleChecker
-
-import cloudinary
-import cloudinary.uploader
+from src.conf.config import settings
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -97,13 +96,11 @@ async def update_avatar(
     Returns:
 
     """
-    r = cloudinary.uploader.upload(
-        file.file, public_id=f"NotesApp/{current_user.username}", overwrite=True
-    )
-    src_url = cloudinary.CloudinaryImage(f"NotesApp/{current_user.username}").build_url(
-        width=250, height=250, crop="fill", version=r.get("version")
-    )
-    user = await repositories_users.update_avatar(current_user.email, src_url, db)
+    public_id = f"{settings.cloudinary_app_prefix}/users/{current_user.username}"
+    asset = CloudPhotoService.upload_photo(file=file, public_id=public_id)
+    url = CloudPhotoService.get_photo_url(public_id=public_id, asset=asset)
+    url = CloudPhotoService.transformate_photo(url=url, asset_type=AssetType.avatar)
+    user = await repositories_users.update_avatar(current_user.email, url, db)
     return user
 
 
@@ -112,7 +109,12 @@ async def update_avatar(
     response_model=List[SearchUserResponse],
     # dependencies=[Depends(allowed_get_all_users)],
 )
-async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+async def read_all_users(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    cur_user: User = Depends(auth_service.get_current_user),
+):
     """
     The read_all_users function returns a list of users.
     Args:
@@ -123,6 +125,12 @@ async def read_all_users(skip: int = 0, limit: int = 10, db: Session = Depends(g
     Returns:
 
     """
+    if cur_user.role != Role.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to get users",
+        )
+
     users = await repositories_users.get_users(skip, limit, db)
     return users
 
@@ -156,8 +164,8 @@ async def get_user(
     response_model=SearchUserResponse,
 )
 async def change_role(
-    user_id: int,
-    body: RoleUpdateSchema,
+    user_id: int,    
+    role: Role,
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
@@ -177,7 +185,31 @@ async def change_role(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission chandge role",
         )
+    body = RoleUpdateSchema(role=role)
     user = await repositories_users.change_role(user_id, body, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return user
+
+@router.put(
+    "/ban/{user_id}",
+    response_model=SearchUserResponse,
+)
+async def change_ban(
+    user_id: int,    
+    isbanned: Isbanned,
+    db: AsyncSession = Depends(get_db),
+    cur_user: User = Depends(auth_service.get_current_user),
+):
+    if cur_user.role != Role.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to block the user",
+        )
+    body = BanUpdateSchema(isbanned=isbanned)
+    user = await repositories_users.change_ban(user_id, body, db)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
