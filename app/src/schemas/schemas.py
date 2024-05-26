@@ -77,6 +77,7 @@ class SearchUserResponse(BaseModel):
     created_at: datetime
     avatar: str
     role: Role
+    isbanned: bool
     model_config = ConfigDict(from_attributes=True)
 
 

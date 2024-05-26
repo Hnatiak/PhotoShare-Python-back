@@ -13,32 +13,44 @@ from src.entity.models import Comment, User, Photo, Role, Base
 USERS = [
     {
         'email': "admin@myapp.com",
+        'username': 'admin',
         'password': 'string',
         'confirmed': True,
+        'avatar': 'http://avatar.com/admin',
         'role': Role.admin
     },
     {
         'email': "moderator@myapp.com",
+        'username': 'moderator',
         'password': 'string',
         'confirmed': True,
+        'avatar': 'http://avatar.com/moderator',
         'role': Role.moderator
     },
     {
         'email': "first_user@myapp.com",
+        'username': 'first_user',
         'password': 'string',
         'confirmed': True,
-        'role': Role.user
+        'avatar': 'http://avatar.com/first_user',
+        'role': Role.user,
+        'isbanned': False
     },
     {
         'email': "second_user@myapp.com",
+        'username': 'second_user',
         'password': 'string',
         'confirmed': True,
-        'role': Role.user
+        'avatar': 'http://avatar.com/second_user',
+        'role': Role.user,
+        'isbanned': False
     },
     {
         'email': "banned_user@myapp.com",
+        'username': 'banned_user',
         'password': 'string',
         'confirmed': True,
+        'avatar': 'http://avatar.com/banned_user',
         'role': Role.user,
         'isbanned': True
     }

@@ -5,9 +5,7 @@ from fastapi import (
     Path,
     status,
     File,
-    Form,
     UploadFile,
-    Query,
 )
 from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,19 +15,20 @@ from sqlalchemy.orm import Session
 
 from src.entity.models import User, Role, Isbanned
 
-from src.schemas.schemas import BanUpdateSchema, UserResponse, UserUpdateSchema, UserDb, RoleUpdateSchema, SearchUserResponse, AssetType
+from src.schemas.schemas import BanUpdateSchema, UserUpdateSchema, RoleUpdateSchema, SearchUserResponse, AssetType
 from src.services.auth import auth_service
 from src.services.photo import CloudPhotoService
 
 from src.repository import users as repositories_users
 from src.database.db import get_db
-from src.services.roles import RoleChecker
+from src.services.roles import RoleChecker, admin_access, moderator_access
 from src.conf.config import settings
+from src.exceptions.exceptions import RETURN_MSG
 
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-allowed_get_all_users = RoleChecker([Role.admin])
+# allowed_get_all_users = RoleChecker([Role.admin])
 
 
 @router.get(
@@ -72,11 +71,12 @@ async def update_user(
 
     """
     user = await repositories_users.update_user(cur_user.id, body, db)
-    if cur_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not Found",
-        )
+# auth_service.get_current_user would not allow this to happen
+    # if cur_user is None:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="User not Found",
+    #     )
     return user
 
 
@@ -108,6 +108,7 @@ async def update_avatar(
     "/all",
     response_model=List[SearchUserResponse],
     # dependencies=[Depends(allowed_get_all_users)],
+    dependencies=[Depends(admin_access)]
 )
 async def read_all_users(
     skip: int = 0,
@@ -125,11 +126,11 @@ async def read_all_users(
     Returns:
 
     """
-    if cur_user.role != Role.admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to get users",
-        )
+    # if cur_user.role != Role.admin:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="You do not have permission to get users",
+    #     )
 
     users = await repositories_users.get_users(skip, limit, db)
     return users
@@ -154,7 +155,7 @@ async def get_user(
     user = await repositories_users.get_user_by_id(user_id, db)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=RETURN_MSG.record_not_found
         )
     return user
 
@@ -162,7 +163,8 @@ async def get_user(
 @router.put(
     "/role/{user_id}",
     response_model=SearchUserResponse,
-)
+    dependencies=[Depends(admin_access)]
+    )
 async def change_role(
     user_id: int,    
     role: Role,
@@ -180,38 +182,39 @@ async def change_role(
     Returns:
 
     """
-    if cur_user.role != Role.admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission chandge role",
-        )
+    # if cur_user.role != Role.admin:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="You do not have permission chandge role",
+    #     )
     body = RoleUpdateSchema(role=role)
     user = await repositories_users.change_role(user_id, body, db)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=RETURN_MSG.record_not_found
         )
     return user
 
 @router.put(
     "/ban/{user_id}",
     response_model=SearchUserResponse,
-)
+    dependencies=[Depends(admin_access)]
+    )
 async def change_ban(
     user_id: int,    
     isbanned: Isbanned,
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
-    if cur_user.role != Role.admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to block the user",
-        )
+    # if cur_user.role != Role.admin:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="You do not have permission to block the user",
+    #     )
     body = BanUpdateSchema(isbanned=isbanned)
     user = await repositories_users.change_ban(user_id, body, db)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=RETURN_MSG.record_not_found
         )
     return user
