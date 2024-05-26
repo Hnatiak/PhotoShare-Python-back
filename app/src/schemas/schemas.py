@@ -3,7 +3,6 @@ import enum
 from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
-# from pydantic_extra_types.phone_numbers import PhoneNumber
 from src.entity.models import Isbanned, Role, AssetType
 from datetime import date
 
@@ -47,8 +46,6 @@ class UserDb(BaseModel):
     avatar: str
     role: Role
 
-    # class Config:
-    #     from_attributes = True
     model_config = ConfigDict(from_attributes=True)
 
 # class UserDb(BaseModel):
@@ -84,8 +81,6 @@ class SearchUserResponse(BaseModel):
 class UserResponseAll(BaseModel):
     user: UserDb
 
-    # class Config:
-    #     from_attributes = True
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -138,8 +133,6 @@ class Operation(enum.Enum):
 class TagBase(BaseModel):
     name: str
 
-    # class Config:
-    #     from_attributes = True
     model_config = ConfigDict(from_attributes=True)
 
 # tags output format is controlled here
@@ -154,6 +147,7 @@ UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)
 
 
 class SimpleComment(BaseModel):
+    id: int
     user_id: int
     text: str
 
@@ -163,12 +157,9 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
     updated_at: datetime
     url: str
-    # tags: list[TagBase]
     tags: CustomStr
     comments: list[SimpleComment]
 
-    # class Config:
-    #     from_attributes = True
     model_config = ConfigDict(from_attributes=True)
 
 

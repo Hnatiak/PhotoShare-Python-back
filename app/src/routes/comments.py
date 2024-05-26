@@ -45,9 +45,9 @@ async def create_comment(comment: str = Body(min_length=1, max_length=500, descr
     return result
 
 
-@router.put("/record/{rec_id}", response_model=CommentResponseSchema, status_code=status.HTTP_202_ACCEPTED)
+@router.put("/record/{comment_id}", response_model=CommentResponseSchema, status_code=status.HTTP_202_ACCEPTED)
 async def edit_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', examples=["user comment"]),
-                       rec_id: int = Path(description="ID of comment to change"),
+                       comment_id: int = Path(description="ID of comment to change"),
                        db: Session = Depends(get_db),
                        current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
     '''
@@ -55,16 +55,15 @@ async def edit_comment(comment: str = Body(min_length=1, max_length=500, descrip
 
     Args:    
         comment: text of new comment
-        photo_id: ID of the photo
-        rec_id: ID of record to change
+        comment_id: ID of record to change
         current_user: current user.
         db: sync db session Default=Depends(get_db)
     Returns:
         obj: 'Comment' | None: Comment with ID or None.
     '''
     
-    record = await rep_comments.get_comment_by_id(rec_id=rec_id, db=db)
-    # author = await rep_comments.get_author_by_comment_id(rec_id=rec_id, db=db)
+    record = await rep_comments.get_comment_by_id(rec_id=comment_id, db=db)
+    # author = await rep_comments.get_author_by_comment_id(rec_id=comment_id, db=db)
     
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -75,7 +74,7 @@ async def edit_comment(comment: str = Body(min_length=1, max_length=500, descrip
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail=RETURN_MSG.access_forbiden)
 
-    result = await rep_comments.edit_comment(record_id=rec_id, comment=comment, db=db)
+    result = await rep_comments.edit_comment(record_id=comment_id, comment=comment, db=db)
 
     return result
 
@@ -147,20 +146,20 @@ async def get_comments_by_user_and_photo_id(user_id: int = Path(description="ID 
     result = await rep_comments.get_comments_by_user_and_photo_ids(user_id=user_id, photo_id=photo_id, offset=offset, limit=limit, db=db)
     return result
 
-@router.delete("/record/{rec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
-async def delete_comment(rec_id: int = Path(description="ID of comment to delete"),
+@router.delete("/record/{comment_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
+async def delete_comment(comment_id: int = Path(description="ID of comment to delete"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> None:
     '''
     Deletes specific comment.
 
     Args:    
-        rec_id: ID of record to delete
+        comment_id: ID of record to delete
         current_user: The user to retrieve ontacts for.
         db: async db session Default=Depends(get_db)
     Returns:
         None
     '''
 
-    result = await rep_comments.delete_comment(record_id=rec_id, db=db)
+    result = await rep_comments.delete_comment(record_id=comment_id, db=db)
     return result

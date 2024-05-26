@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 import asyncio
 import uuid
 from time import sleep
-import unittest
 
 from src.entity.models import User, Photo, Comment
 from src.services.auth import auth_service
@@ -53,7 +52,6 @@ def test_create_comment_user1(client, users, photos):
     assert data["photo_id"] == str(photo.id)
     assert data["text"] == comment
 
-# @unittest.skip('not working after test_create_comment')
 def test_create_comment_invalid_photo_id(client, users):
     user: User = users[0]
     token = user_token(user)
@@ -297,23 +295,6 @@ def test_delete_other_comment_user0(client, users, session):
     data = responce.json()
     assert data["detail"] == RETURN_MSG.operation_forbiden
 
-
-# def test_edit_not_exist_comment_user0(client, users):
-#     # sleep(1)
-#     user: User = users[0]
-#     token = user_token(user)
-#     comment_record = MagicMock(id=1000)
-#     comment = "edited user0 comment"
-#     header = ["Authorization", f"Bearer {token}"]
-
-#     responce = client.put(
-#         f"api/comments/record/{comment_record.id}", json=comment, headers=[header,])
-
-#     assert responce.status_code == 404, responce.text
-#     data = responce.json()
-#     assert data["detail"] == RETURN_MSG.record_not_found
-
-
 def test_delete_comment_moderator(client, moderator, users, session):
     user: User = moderator
     author: User = users[0]
@@ -326,7 +307,6 @@ def test_delete_comment_moderator(client, moderator, users, session):
         f"api/comments/record/{comment_record.id}", headers=[header,])
 
     assert responce.status_code == 204, responce.text
-
 
 def test_delete_comment_admin(client, admin, users, session):
     user: User = admin
