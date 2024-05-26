@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
 from src.entity.models import Photo, Tag, User, AssetType
 from src.schemas.schemas import PhotoBase, PhotoUpdate
+from app.src.exceptions.exceptions import AccessDeniedException
 from src.repository.photos import PhotosRepository
 from src.services.cache import CacheableQueryExecutor, CacheableQuery
 
@@ -96,7 +97,8 @@ class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once_with(photo)
         self.mock_session.commit.assert_called_once()
         self.mock_session.refresh.assert_called_once_with(photo)
-        event_trigger.assert_called_once_with(event_prefix="photo", event_name="created")
+        event_trigger.assert_called_once_with(
+            photo.id, event_prefix="photo", event_name="created")
         self.assertIsInstance(photo, Photo)
         self.assertEqual(photo.description, body.description)
         self.assertEqual(photo.url, body.url)
@@ -116,7 +118,8 @@ class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once_with(photo)
         self.mock_session.commit.assert_called_once()
         self.mock_session.refresh.assert_called_once_with(photo)
-        event_trigger.assert_called_once_with(event_prefix="photo", event_name="created")
+        event_trigger.assert_called_once_with(
+            photo.id, event_prefix="photo", event_name="created")
         self.assertIsInstance(photo, Photo)
         self.assertEqual(photo.tags[0], existing_tag)
 
@@ -139,7 +142,8 @@ class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once_with(photo)
         self.mock_session.commit.assert_called_once()
         self.mock_session.refresh.assert_called_once_with(photo)
-        event_trigger.assert_called_once_with(event_prefix="photo", event_name="created")
+        event_trigger.assert_called_once_with(
+            photo.id, event_prefix="photo", event_name="created")
         self.assertIsInstance(photo, Photo)
         self.assertEqual(photo.description, description)
         self.assertEqual(photo.url, url)

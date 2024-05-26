@@ -18,6 +18,7 @@ from src.services.authorization import AccessRule as access_rule, Authorization 
 from fastapi import APIRouter, Form, HTTPException, Depends, Path, Query, status, UploadFile, File
 from src.schemas.schemas import PhotoBase, PhotoResponse, LinkType, PhotoUpdate, Operation, AssetType
 from src.conf.config import settings
+from src.exceptions.exceptions import AccessDeniedException
 
 
 logger = logging.getLogger(uvicorn.logging.__name__)

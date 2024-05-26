@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, Query
 from src.entity.models import Photo, Tag, User, AssetType
 from datetime import datetime, timedelta
 from src.schemas.schemas import PhotoBase, PhotoUpdate
+from src.exceptions.exceptions import AccessDeniedException
 from src.services.cache import QueryExecutor, CacheableQuery, CacheableQueryExecutor
 
 

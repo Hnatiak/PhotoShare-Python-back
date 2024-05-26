@@ -7,15 +7,18 @@ from src.database.db import get_db
 from src.services.auth import auth_service
 from src.services.roles import admin_access, moderator_access, is_owner
 from src.schemas.schemas import CommentNewSchema, CommentResponseSchema
-from src.entity.models import User, Comment, Role
+from src.entity.models import User, Comment
 from src.repository import comments as rep_comments
+from src.repository.photos import repository_photos
+from src.exceptions.exceptions import RETURN_MSG
 
 
 router = APIRouter(prefix='/comments', tags=["comments"])
 
 
 @router.post("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_201_CREATED)
-async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', examples=["user comment"]),
+async def create_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", 
+                                             title='Comment', examples=["user comment"]),
                          photo_id: uuid.UUID = Path(description="ID of photo to comment"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
@@ -30,15 +33,21 @@ async def create_comment(comment: str = Body(min_length=1, max_length=500, descr
     Returns:
         obj: 'Comment' | None: Comment with ID or None.
     '''
+
+    photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db, disable_caching=True)
+    # photo = await repository_photos.get_photo(photo_id=photo_id, user=current_user, db=db)
+    if photo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=RETURN_MSG.record_not_found)
+
     body = CommentNewSchema(photo_id=photo_id, text=comment)
     result = await rep_comments.create_comment(user=current_user, body=body, db=db)
     return result
 
-# TODO limit access to comment owner, moderator or admin
-@router.put("/{photo_id}", response_model=CommentResponseSchema, status_code=status.HTTP_202_ACCEPTED)
+
+@router.put("/record/{comment_id}", response_model=CommentResponseSchema, status_code=status.HTTP_202_ACCEPTED)
 async def edit_comment(comment: str = Body(min_length=1, max_length=500, description="Comment text", title='Comment', examples=["user comment"]),
-                    #    photo_id: uuid.UUID = Path(description="ID of photo to comment"),
-                       rec_id: int = Query(description="ID of comment to change"),
+                       comment_id: int = Path(description="ID of comment to change"),
                        db: Session = Depends(get_db),
                        current_user: User = Depends(auth_service.get_current_user)) -> Comment | None:
     '''
@@ -46,31 +55,26 @@ async def edit_comment(comment: str = Body(min_length=1, max_length=500, descrip
 
     Args:    
         comment: text of new comment
-        photo_id: ID of the photo
-        rec_id: ID of record to change
+        comment_id: ID of record to change
         current_user: current user.
         db: sync db session Default=Depends(get_db)
     Returns:
         obj: 'Comment' | None: Comment with ID or None.
     '''
     
-    record = await rep_comments.get_comment_by_id(rec_id=rec_id, db=db)
-    # author = await rep_comments.get_author_by_comment_id(rec_id=rec_id, db=db)
+    record = await rep_comments.get_comment_by_id(rec_id=comment_id, db=db)
+    # author = await rep_comments.get_author_by_comment_id(rec_id=comment_id, db=db)
     
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Record ID not found")
+                            detail=RETURN_MSG.record_not_found)
 
-    current_user_is_owner = is_owner(current_user=current_user, item_owner_id=record.user_id)
-    # if (current_user.role not in moderator_access.allowed_roles) and (author.id != current_user.id):
+    current_user_is_owner = await is_owner(current_user=current_user, item_owner_id=record.user_id)
     if (current_user.role not in moderator_access.allowed_roles) and not current_user_is_owner:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail='Access forbidden')
+                            detail=RETURN_MSG.access_forbiden)
 
-    # body = CommentNewSchema(photo_id=photo_id, text=comment)
-    # result = await rep_comments.edit_comment(record_id=rec_id, body=body, db=db)
-    result = await rep_comments.edit_comment(record_id=rec_id, comment=comment, db=db)
-    # result = await rep_comments.update_comment(record=record, comment=comment, db=db)
+    result = await rep_comments.edit_comment(record_id=comment_id, comment=comment, db=db)
 
     return result
 
@@ -142,20 +146,20 @@ async def get_comments_by_user_and_photo_id(user_id: int = Path(description="ID 
     result = await rep_comments.get_comments_by_user_and_photo_ids(user_id=user_id, photo_id=photo_id, offset=offset, limit=limit, db=db)
     return result
 
-@router.delete("/record/{rec_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
-async def delete_comment(rec_id: int = Path(description="ID of record to delete"),
+@router.delete("/record/{comment_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(moderator_access)])
+async def delete_comment(comment_id: int = Path(description="ID of comment to delete"),
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)) -> None:
     '''
     Deletes specific comment.
 
     Args:    
-        rec_id: ID of record to delete
+        comment_id: ID of record to delete
         current_user: The user to retrieve ontacts for.
         db: async db session Default=Depends(get_db)
     Returns:
         None
     '''
 
-    result = await rep_comments.delete_comment(record_id=rec_id, db=db)
+    result = await rep_comments.delete_comment(record_id=comment_id, db=db)
     return result

@@ -7,7 +7,7 @@ from time import sleep
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
 
-from tests.mock_db import MockDB
+from tests.mock_db import MockDB, USERS, PHOTOS
 from src.entity.models import Comment, User, Photo, Role
 from src.schemas.schemas import CommentNewSchema
 from src.repository.comments import (create_comment, 
@@ -17,41 +17,6 @@ from src.repository.comments import (create_comment,
                                      get_comments_by_user_and_photo_ids, 
                                      delete_comment, 
                                      get_comment_by_id)
-
-USERS = [
-    {
-        'email': "admin@myapp.com",
-        'password': 'string',
-        'confirmed': True,
-        'role': Role.admin
-    },
-    {
-        'email': "moderator@myapp.com",
-        'password': 'string',
-        'confirmed': True,
-        'role': Role.moderator
-    },
-    {
-        'email': "first_user@myapp.com",
-        'password': 'string',
-        'confirmed': True,
-        'role': Role.user
-    },
-    {
-        'email': "second_user@myapp.com",
-        'password': 'string',
-        'confirmed': True,
-        'role': Role.user
-    }
-]
-
-PHOTOS = [
-    {'url': 'http://cloud.com/img_1.jpg'},
-    {'url': 'http://cloud.com/img_2.jpg'},
-    {'url': 'http://cloud.com/img_3.jpg'},
-    {'url': 'http://cloud.com/img_4.jpg'},
-
-]
 
 class TestSyncComments(unittest.IsolatedAsyncioTestCase):
     @classmethod
