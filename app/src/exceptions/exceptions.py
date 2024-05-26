@@ -7,7 +7,8 @@ class AccessDeniedException(Exception):
 class ReturnMessages:
     user_exists: str = "Account already exists"
     user_created: str = "User successfully created. Check your email for confirmation."
-    user_logout: str = "Successfully logged out"    
+    user_logout: str = "Successfully logged out"
+    user_banned: str = "User is banned"
     verification_error: str = "Verification error"
     credentials_error: str = "Could not validate credentials"
     email_confirmed: str = "Email confirmed"
@@ -20,6 +21,10 @@ class ReturnMessages:
     token_refresh_invalid: str = "Invalid refresh token"
     token_email_invalid: str = "Invalid token for email verification"
     token_scope_wrong: str = "Invalid scope for token"
+
+    record_not_found: str = "Record not found"
+    access_forbiden: str = "Access forbidden"
+    operation_forbiden: str = "Operation forbidden"
 
 
 RETURN_MSG = ReturnMessages()

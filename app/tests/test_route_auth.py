@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 from time import sleep
 import asyncio
 
+from src.entity.models import User
 from src.services.auth import auth_service
 from src.exceptions.exceptions import RETURN_MSG
 
@@ -139,6 +140,16 @@ def test_login_wrong_email(client, new_user):
     data = response.json()
     assert data["detail"] == RETURN_MSG.email_invalid
 
+def test_login_user_banned(client, session):
+    user: User = session.query(User).filter_by(isbanned=True).first()
+    
+    data = {"username": user.email, "password": "doesnt_matter"}
+
+    response = client.post("/api/auth/login", data=data)
+
+    assert response.status_code == 401, response.text
+    data = response.json()
+    assert data["detail"] == RETURN_MSG.user_banned
 
 def test_refresh_token_user_not_exist(client):
     token = asyncio.run(auth_service.create_refresh_token({"sub": "wrong@mail.com"}))
@@ -179,7 +190,6 @@ def test_refresh_token_wrong(client, new_user):
     data = response.json()
     assert data["detail"] == RETURN_MSG.token_refresh_invalid
 
-
 def test_logout_correct(client, monkeypatch):
     mock_dell_from_bleck_lis = MagicMock()
     monkeypatch.setattr(
@@ -192,7 +202,6 @@ def test_logout_correct(client, monkeypatch):
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["logout"] == RETURN_MSG.user_logout
-
 
 def test_logout_wrong_token(client):
     token = "wrong_token"

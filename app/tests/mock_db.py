@@ -34,6 +34,13 @@ USERS = [
         'password': 'string',
         'confirmed': True,
         'role': Role.user
+    },
+    {
+        'email': "banned_user@myapp.com",
+        'password': 'string',
+        'confirmed': True,
+        'role': Role.user,
+        'isbanned': True
     }
 ]
 

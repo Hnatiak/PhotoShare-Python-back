@@ -14,8 +14,8 @@ class RoleChecker:
         if current_user.role not in self.allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operation forbidden")
 
-admin_access = RoleChecker([Role.admin, Role.moderator])
-moderator_access = RoleChecker([Role.moderator])
+admin_access = RoleChecker([Role.admin])
+moderator_access = RoleChecker([Role.moderator, Role.admin])
 
 async def is_owner(current_user: User, item_owner_id: int):
     return current_user.id == item_owner_id

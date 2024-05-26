@@ -8,18 +8,25 @@ from tests.mock_db import MockDB, USERS, PHOTOS
 
 
 @pytest.fixture(scope="module")
-def init_db():
+def Mock_db():
     # Create the database
+    init_db = MockDB(users=USERS, photos=PHOTOS)
+    
+    return init_db
 
-    Mock_db = MockDB(users=USERS, photos=PHOTOS)
-    # local_session = Mock_db()
-    # return local_session
-    return Mock_db    
 
 @pytest.fixture(scope="module")
-def client():
-    # Dependency override
-    Mock_db = MockDB(users=USERS, photos=PHOTOS)
+def session(Mock_db):
+
+    session = Mock_db()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture(scope="module")
+def client(Mock_db):
 
     def override_get_db():
         session = Mock_db()

@@ -97,7 +97,8 @@ class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once_with(photo)
         self.mock_session.commit.assert_called_once()
         self.mock_session.refresh.assert_called_once_with(photo)
-        event_trigger.assert_called_once_with(event_prefix="photo", event_name="created")
+        event_trigger.assert_called_once_with(
+            photo.id, event_prefix="photo", event_name="created")
         self.assertIsInstance(photo, Photo)
         self.assertEqual(photo.description, body.description)
         self.assertEqual(photo.url, body.url)
@@ -117,7 +118,8 @@ class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once_with(photo)
         self.mock_session.commit.assert_called_once()
         self.mock_session.refresh.assert_called_once_with(photo)
-        event_trigger.assert_called_once_with(event_prefix="photo", event_name="created")
+        event_trigger.assert_called_once_with(
+            photo.id, event_prefix="photo", event_name="created")
         self.assertIsInstance(photo, Photo)
         self.assertEqual(photo.tags[0], existing_tag)
 
@@ -140,7 +142,8 @@ class TestAsyncPhotosRepository(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once_with(photo)
         self.mock_session.commit.assert_called_once()
         self.mock_session.refresh.assert_called_once_with(photo)
-        event_trigger.assert_called_once_with(event_prefix="photo", event_name="created")
+        event_trigger.assert_called_once_with(
+            photo.id, event_prefix="photo", event_name="created")
         self.assertIsInstance(photo, Photo)
         self.assertEqual(photo.description, description)
         self.assertEqual(photo.url, url)
