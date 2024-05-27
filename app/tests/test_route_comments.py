@@ -1,33 +1,12 @@
 from unittest.mock import MagicMock
-import pytest
 import asyncio
 import uuid
 from time import sleep
 
-from src.entity.models import User, Photo, Role, Comment
+from src.entity.models import User, Photo, Comment
 from src.services.auth import auth_service
 from src.exceptions.exceptions import RETURN_MSG
 
-@pytest.fixture(scope='module')
-def users(session):
-    users = session.query(User).filter_by(role=Role.user).all()
-    return users
-
-@pytest.fixture(scope='module')
-def moderator(session):
-    user = session.query(User).filter_by(role=Role.moderator).first()
-    return user
-
-@pytest.fixture(scope='module')
-def admin(session):
-    user = session.query(User).filter_by(role=Role.admin).first()
-    return user
-
-
-@pytest.fixture(scope='module')
-def photos(session):
-    photos = session.query(Photo).all()
-    return photos
 
 def user_token(user: User) -> str:
     access_token = asyncio.run(auth_service.create_access_token(
