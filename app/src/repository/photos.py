@@ -242,4 +242,6 @@ class PhotosRepository:
         return photo
 
 
-repository_photos = PhotosRepository(query_executor=CacheableQueryExecutor(event_prefixes=["photo", "comment", "user"]))
+query_executor = CacheableQueryExecutor(
+    event_prefixes=["photo", "comment", "user"])
+repository_photos = PhotosRepository(query_executor=query_executor)
