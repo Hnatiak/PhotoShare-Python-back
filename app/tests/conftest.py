@@ -78,3 +78,11 @@ def mock_redis(monkeypatch):
         "fastapi_limiter.FastAPILimiter.identifier", AsyncMock())
     monkeypatch.setattr(
         "fastapi_limiter.FastAPILimiter.http_callback", AsyncMock())
+
+
+@pytest.fixture(scope='function')
+def mock_cache(monkeypatch):
+    monkeypatch.setattr(
+        "src.repository.photos.query_executor.client", None)
+    monkeypatch.setattr(
+        "src.repository.qrcode.query_executor.client", None)

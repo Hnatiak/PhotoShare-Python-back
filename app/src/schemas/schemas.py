@@ -3,7 +3,7 @@ import enum
 from typing import Dict, Hashable, List, Optional, Annotated, TypeVar
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, PastDate, PlainSerializer, Strict, conset, UUID4
-from src.entity.models import Isbanned, Role, AssetType
+from src.entity.models import Isbanned, Role, AssetType, User
 from datetime import date
 
 
@@ -94,9 +94,17 @@ class RequestEmail(BaseModel):
     email: EmailStr
 
 
+class UserNameResponceSchema(BaseModel):
+    username:str
+
+
+UserNameString = Annotated[UserNameResponceSchema, PlainSerializer(
+    lambda x: x.username, return_type=str)]
+
 class CommentResponseSchema(BaseModel):
     id: int
     user_id: int
+    user: UserNameString
     photo_id: Annotated[UUID4, Strict(False)]
     text: str
     created_at: datetime
