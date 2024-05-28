@@ -3,6 +3,7 @@ import asyncio
 from time import sleep
 from datetime import datetime
 from fastapi import File
+from pathlib import Path
 
 from src.entity.models import User, Role, Isbanned
 from src.services.auth import auth_service
@@ -87,7 +88,7 @@ def test_update_avatar_user0(client, users, mock_redis, monkeypatch):
     monkeypatch.setattr(
         "src.routes.users.CloudPhotoService.transformate_photo", mock_transformate_photo)
 
-    file_name = "mock_db.py"
+    file_name = Path(__file__).parent.joinpath("mock_db.py")
     with open(file_name, "rb") as fh:
         file = ("file", fh)
 
@@ -204,9 +205,9 @@ def test_change_role_admin_user_exist(client, admin, users, mock_redis):
     new_role = Role.moderator.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("role", new_role), ]
+    params = {"role": new_role}
     responce = client.put(
-        f"api/users/role/{target.id}", params=params, headers=[header,])
+        f"api/users/role/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 200, responce.text
     data = responce.json()
@@ -221,9 +222,9 @@ def test_change_role_admin_user_not_exist(client, admin, users, mock_redis):
     new_role = Role.moderator.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("role", new_role), ]
+    params = {"role": new_role}
     responce = client.put(
-        f"api/users/role/{target.id}", params=params, headers=[header,])
+        f"api/users/role/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 404, responce.text
     data = responce.json()
@@ -235,9 +236,9 @@ def test_change_role_moderator(client, moderator, users, mock_redis):
     new_role = Role.user.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("role", new_role), ]
+    params = {"role": new_role}
     responce = client.put(
-        f"api/users/role/{target.id}", params=params, headers=[header,])
+        f"api/users/role/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 403, responce.text
     data = responce.json()
@@ -249,9 +250,9 @@ def test_change_role_user0(client, users, mock_redis):
     new_role = Role.user.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("role", new_role), ]
+    params = {"role": new_role}
     responce = client.put(
-        f"api/users/role/{target.id}", params=params, headers=[header,])
+        f"api/users/role/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 403, responce.text
     data = responce.json()
@@ -263,9 +264,9 @@ def test_ban_admin_user_exist(client, admin, users, mock_redis):
     isbanned = Isbanned.banned.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("isbanned", isbanned), ]
+    params = {"isbanned": isbanned}
     responce = client.put(
-        f"api/users/ban/{target.id}", params=params, headers=[header,])
+        f"api/users/ban/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 200, responce.text
     data = responce.json()
@@ -281,9 +282,9 @@ def test_unban_admin_user_exist(client, admin, users, mock_redis):
     isbanned = Isbanned.unbanned.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("isbanned", isbanned), ]
+    params = {"isbanned": isbanned}
     responce = client.put(
-        f"api/users/ban/{target.id}", params=params, headers=[header,])
+        f"api/users/ban/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 200, responce.text
     data = responce.json()
@@ -299,9 +300,9 @@ def test_ban_admin_user_not_exist(client, admin, users, mock_redis):
     isbanned = Isbanned.banned.value
     token = user_token(user)
     header = ["Authorization", f"Bearer {token}"]
-    params = [("isbanned", isbanned), ]
+    params = {"isbanned": isbanned}
     responce = client.put(
-        f"api/users/ban/{target.id}", params=params, headers=[header,])
+        f"api/users/ban/{target.id}", data=params, headers=[header,])
 
     assert responce.status_code == 404, responce.text
     data = responce.json()

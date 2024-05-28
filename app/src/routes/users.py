@@ -1,5 +1,6 @@
 from fastapi import (
     APIRouter,
+    Form,
     HTTPException,
     Depends,
     Path,
@@ -167,7 +168,7 @@ async def get_user(
     )
 async def change_role(
     user_id: int,    
-    role: Role,
+    role: Role = Form(Role.user),
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
@@ -202,7 +203,7 @@ async def change_role(
     )
 async def change_ban(
     user_id: int,    
-    isbanned: Isbanned,
+    isbanned: Isbanned = Form(None),
     db: AsyncSession = Depends(get_db),
     cur_user: User = Depends(auth_service.get_current_user),
 ):
