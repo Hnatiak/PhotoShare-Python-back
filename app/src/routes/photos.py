@@ -201,7 +201,7 @@ async def create_photo(file: UploadFile = File(),
     description="No more than 10 requests per minute",
     dependencies=[Depends(RateLimiter(times=rl_times, seconds=rl_seconds))])
 async def transform_photo(photo_id: uuid.UUID,
-                        transformation: AssetType = None,                        
+                        transformation: AssetType = Form(None),                        
                         db: Session = Depends(get_db),
                         current_user: User = Depends(auth_service.get_current_user),
                         authorization: authorization_service = Depends(authorization_service(
