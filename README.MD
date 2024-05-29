@@ -10,5 +10,6 @@
 
 4. Execute main.py 
 
-HERE IS FRONTEND REPO: https://github.com/gyshpak/PhotoShare-Python-front \n
+HERE IS FRONTEND REPO: https://github.com/gyshpak/PhotoShare-Python-front
+
 HERE IS FRONTEND RENDER: https://photoshare-python-front.onrender.com/
