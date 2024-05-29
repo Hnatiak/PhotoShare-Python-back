@@ -101,6 +101,7 @@ class UserNameResponceSchema(BaseModel):
 UserNameString = Annotated[UserNameResponceSchema, PlainSerializer(
     lambda x: x.username, return_type=str, when_used="unless-none")] 
 
+
 class CommentResponseSchema(BaseModel):
     id: int
     user_id: int
@@ -149,7 +150,6 @@ def tags_serializer(tags: TagBase) -> str:
     names = [f'#{tag.name}' for tag in tags]
     return " ".join(names)    
 
-
 CustomStr = Annotated[List[TagBase], PlainSerializer(tags_serializer, return_type=str)]
 UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)]
 
@@ -157,7 +157,7 @@ UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)
 class SimpleComment(BaseModel):
     id: int
     user_id: int
-    username: UserNameString = None
+    user: UserNameString
     text: str
 
 
