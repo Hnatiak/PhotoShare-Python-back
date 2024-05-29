@@ -99,7 +99,7 @@ class UserNameResponceSchema(BaseModel):
 
 
 UserNameString = Annotated[UserNameResponceSchema, PlainSerializer(
-    lambda x: x.username, return_type=str)]
+    lambda x: x.username, return_type=str, when_used="unless-none")] 
 
 class CommentResponseSchema(BaseModel):
     id: int
@@ -157,7 +157,7 @@ UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)
 class SimpleComment(BaseModel):
     id: int
     user_id: int
-    username: UserNameString
+    username: UserNameString = None
     text: str
 
 
