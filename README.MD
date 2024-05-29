@@ -96,4 +96,10 @@ python main.py
 - [Andrii Demenin](https://github.com/demagoit)
 - [Olena Polkhova](https://github.com/ElenaPolkhovaS)
 
+## FOR DEVS:
+
+HERE IS FRONTEND REPO: https://github.com/gyshpak/PhotoShare-Python-front
+
+HERE IS FRONTEND RENDER: https://photoshare-python-front.onrender.com/
+
 &#xa0;
