@@ -157,6 +157,7 @@ UUIDString = Annotated[UUID4, PlainSerializer(lambda x: str(x), return_type=str)
 class SimpleComment(BaseModel):
     id: int
     user_id: int
+    username: UserNameString
     text: str
 
 
